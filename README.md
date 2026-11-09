@@ -40,8 +40,9 @@ dsh-compose-studio/
 ## 安装（开发中）
 
 ```bash
-# 在 DSH profile 中安装本地插件
-dsh plugin --profile <你的 profile> add link:D:/Develop/plugin/dsh-android-compose
+# 在 DSH profile 中安装本地插件（link: 后需接本仓库的绝对路径，
+# 因为 dsh 命令的执行目录不确定，不要写死具体值）
+dsh plugin --profile <你的 profile> add link:<本仓库绝对路径>
 ```
 
 ---
