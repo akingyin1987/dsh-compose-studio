@@ -1,0 +1,35 @@
+# ---- Build outputs ----
+build/
+dist/
+out/
+*.wasm
+*.js.map
+
+# ---- Gradle / Kotlin ----
+.gradle/
+.kotlin/
+kotlin-js-store/
+.gradle/
+local.properties
+
+# ---- Node ----
+node_modules/
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ---- IDE ----
+.idea/
+.vscode/
+*.iml
+
+# ---- OS ----
+.DS_Store
+Thumbs.db
+
+# ---- Secrets (never commit) ----
+.env
+.env.*
+*.token
+*.p12
+*.keystore

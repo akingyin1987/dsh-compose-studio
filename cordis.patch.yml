@@ -1,0 +1,12 @@
+# dsh-compose-studio —— DSH 插件挂载声明
+#
+# 通过官方 CLI 安装时：
+#   dsh plugin --profile <name> add dsh-compose-studio
+# 命令会把本包追加进 profile 的 bundles，DSH 启动时合并此 patch。
+#
+# 本地开发安装：
+#   dsh plugin --profile <name> add link:<本目录绝对路径>
+
+- insert:
+    - id: compose-studio
+      name: dsh-compose-studio
