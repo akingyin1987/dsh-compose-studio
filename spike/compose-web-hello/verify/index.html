@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Compose Web × React Overlay 互操作验证</title>
+	<style>
+		body { margin: 0; font-family: system-ui, -apple-system, 'Segoe UI', sans-serif; background: #f0f2f5; }
+		header { padding: 16px 24px; background: #fff; border-bottom: 1px solid #e0e0e0; }
+		header h1 { margin: 0 0 4px; font-size: 16px; }
+		header p { margin: 0; font-size: 12px; color: #666; }
+		#stage { position: relative; margin: 24px; }
+		/* Compose Web 渲染表面 */
+		#root { width: 420px; height: 260px; background: #fff; border: 1px solid #d0d0d0; border-radius: 8px; overflow: hidden; }
+		/* React overlay 层（覆盖整个 stage） */
+		#overlay { position: absolute; inset: 0; pointer-events: none; }
+		.highlight { position: absolute; border: 2px solid #1976d2; background: rgba(25, 118, 210, 0.12); border-radius: 4px; pointer-events: none; transition: all 0.12s ease; }
+		.label { position: absolute; top: -22px; left: -2px; font-size: 11px; color: #1976d2; background: #e3f2fd; padding: 1px 6px; border-radius: 3px; white-space: nowrap; }
+		#log { margin: 0 24px 24px; padding: 12px 16px; background: #fff; border: 1px solid #e0e0e0; border-radius: 8px; font-size: 12px; font-family: ui-monospace, monospace; max-height: 120px; overflow: auto; }
+		#log div { padding: 2px 0; border-bottom: 1px solid #f5f5f5; }
+	</style>
+</head>
+<body>
+	<header>
+		<h1>T1 · Compose Web × React Overlay 互操作验证</h1>
+		<p>点击下方 Compose Web 渲染的 Button → React overlay 应高亮对应节点区域（事件桥 + 命中测试）</p>
+	</header>
+	<div id="stage">
+		<div id="root"></div>
+		<div id="overlay"></div>
+	</div>
+	<div id="log"></div>
+
+	<script src="react.development.js"></script>
+	<script src="react-dom.development.js"></script>
+	<script src="../build/kotlin-webpack/js/productionExecutable/compose-web-hello.js"></script>
+	<script>
+		const e = React.createElement;
+		const logEl = document.getElementById('log');
+		function log(msg) {
+			const line = document.createElement('div');
+			line.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+			logEl.prepend(line);
+		}
+
+		// --- React overlay ---
+		function Overlay() {
+			const [hl, setHl] = React.useState(null);
+
+			React.useEffect(() => {
+				// 事件桥：监听 Compose Web 派发的 activate 事件
+				const handler = (ev) => {
+					const nodeId = ev.detail && ev.detail.nodeId;
+					if (!nodeId) return;
+					log(`event: compose-web:activate nodeId=${nodeId}`);
+					// 命中测试：基于文档模型几何（此处用 Compose 渲染节点的 DOM 矩形模拟）
+					const node = document.querySelector(`[data-testid="${nodeId}"]`);
+					if (!node) {
+						log(`miss: 未找到节点 ${nodeId}（testTag 未渲染为 data-testid?）`);
+						return;
+					}
+					const rect = node.getBoundingClientRect();
+					const stageRect = document.getElementById('stage').getBoundingClientRect();
+					setHl({
+						top: rect.top - stageRect.top,
+						left: rect.left - stageRect.left,
+						width: rect.width,
+						height: rect.height
+					});
+					log(`hit: ${nodeId} rect=${Math.round(rect.width)}x${Math.round(rect.height)}`);
+				};
+				window.addEventListener('compose-web:activate', handler);
+				return () => window.removeEventListener('compose-web:activate', handler);
+		}, []);
+
+			return e('div', { style: { position: 'absolute', inset: 0 } },
+				hl
+					? e('div', {
+							className: 'highlight',
+							style: { top: hl.top, left: hl.left, width: hl.width, height: hl.height }
+						}, e('span', { className: 'label' }, 'overlay: ' + (hl.width > 0 ? 'hit' : 'miss')))
+					: null
+			);
+		}
+
+		ReactDOM.createRoot(document.getElementById('overlay')).render(e(Overlay));
+		log('overlay mounted（等待 Compose Web 事件）');
+	</script>
+</body>
+</html>

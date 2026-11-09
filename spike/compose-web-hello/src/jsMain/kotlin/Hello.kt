@@ -12,7 +12,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import kotlinx.browser.window
 import org.jetbrains.compose.web.renderComposable
+import org.w3c.dom.CustomEvent
 
 @Composable
 fun App() {
@@ -23,7 +25,19 @@ fun App() {
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(text = "Compose Studio Preview Runtime")
-            Button(onClick = { clicks += 1 }) {
+            Button(
+                onClick = {
+                    clicks += 1
+                    // 事件桥（Phase 0 验证）：Compose Web 点击 → 通知 React overlay
+                    window.dispatchEvent(
+                        CustomEvent(
+                            "compose-web:activate",
+                            js("{ detail: { nodeId: 'button-1' } }")
+                        )
+                    )
+                },
+                modifier = Modifier.testTag("button-1")
+            ) {
                 Text(text = "Clicked $clicks times")
             }
         }

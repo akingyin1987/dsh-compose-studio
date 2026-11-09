@@ -33,3 +33,6 @@ Thumbs.db
 *.token
 *.p12
 *.keystore
+
+# ---- Verify tools (local dependencies, not committed) ----
+spike/compose-web-hello/verify/react*.js
