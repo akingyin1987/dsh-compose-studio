@@ -39,7 +39,7 @@
 4. **双半入口**：
    - 服务端：`main` → `lib/index.js`（ESM，Cordis 插件 `apply(ctx)`）；
    - 客户端：`exports["./client"]` → `lib/client.js`，由 `window.__ModuleLoader__.load({ id, factory })` 加载。
-5. **客户端 UI 契约**：`ctx.slots.inject(slotName, () => ctx.slots.register(options, Component))`；`SlotMap` 通过 `declare module '@deepseek-ai/dsh-client-ui-slots'` 扩充。
+5. **客户端 UI 契约**（2026-11-09 实测修订）：`ctx.effect(() => ctx.slots.register(options, Component))`；`SlotMap` 通过 `declare module '@deepseek-ai/dsh-client-ui-slots'` 扩充（interface 合并）。list slot（`shell.overlay`、`sidebar.footer.action`）可安全注册；single slot（`root`/`sidebar`/`conversation`/`details`）被宿主占用，注册会 shadow。
 6. **服务端能力**：`ctx.tools.register(defineTool({...}))`、`ctx.webServer.register({ kind: "prefix", path, handler })`、`ctx.llm.stream(options)`、`ctx.effect(disposer, label)`、schemastery `z` 配置 schema。
 7. **社区先例**：`dsh-better-sidebar`、`dsh-whale-widget`、`dsh-at-file`、`dsh-context`、`dsh-cost-meter`、`@nanmicoder/dsh-agent-teams` 等（均为 npm 发布的 DSH 插件）。
 
@@ -124,7 +124,7 @@
 
 | 决策点 | 选项 | 结论 | 理由 |
 |---|---|---|---|
-| 编辑器宿主 | A. 主面板（main slot） B. 右侧栏 tab | **A 主面板** | 三栏布局需要整幅宽度；主面板是 DSH 预留给全局面板的 keyed slot；与会话内容互斥切换 |
+| 编辑器宿主 | A. 主面板（main slot） B. 右侧栏 tab | **C. list slot 浮层**（实测修正） | DSH 0.1.0-rc.7 无 main keyed slot（臆测）；用 `sidebar.footer.action` 入口 + `shell.overlay` 浮层实现 |
 | 预览保真 | A. React 模拟 B. Compose Web 真实渲染 | **B Compose Web 真实渲染** | 预览与生成的 Compose 代码**同源**，避免"预览好看、真机不同"；用户明确要求高保真 |
 | 客户端框架 | React（宿主一致） / 自研 | **React** | 宿主 `dsh-client-ui-*` 均为 React，primitives 可直接复用；预览层用 React overlay 覆盖 Compose Web |
 | 状态管理 | 自研 store / dsh-client-store | **dsh-client-store** | 宿主提供的响应式快照 store，与 slot 订阅机制一致 |
@@ -279,7 +279,9 @@ dsh-compose-studio/
 import { defineTool } from "@deepseek-ai/dsh-tools";
 import z from "@deepseek-ai/schemastery";
 
-export const inject = ["tools", "webServer", "llm", "workspace"];
+// 注意：DSH 0.1.0-rc.7 无 "workspace" Cordis 服务（宿主为 workspaceRegistry，
+// 且非 inject 声明式服务）。Phase 1 需要工作区读写时再调研正确服务名。
+export const inject = ["tools", "webServer", "llm"];
 
 export function apply(ctx) {
   // 1) 配置 schema
@@ -321,62 +323,69 @@ window.__ModuleLoader__.load({
 ```
 
 ```ts
-// src/client/index.ts（源码形态）
-export const inject = ["slots", "layout", "locale", "clientStore"];
+// src/client/index.tsx（源码形态，基于 DSH 0.1.0-rc.7 真实契约）
+import type { ClientContext } from "@deepseek-ai/dsh-client-runtime/client";
+
+// 扩充 SlotMap：声明本插件使用的 slot（interface 合并，与宿主声明一致）
+declare module "@deepseek-ai/dsh-client-ui-slots" {
+  interface SlotMap {
+    "shell.overlay": { kind: "list"; scope: "root" };
+    "sidebar.footer.action": { kind: "list"; scope: "root" };
+  }
+}
+
+export const inject = ["slots"];
 
 export function apply(ctx: ClientContext): void {
-  const t = ctx.locale.t("compose-studio");
+  // 侧栏入口（sidebar.footer.action，list slot，additive）
+  ctx.effect(
+    () => ctx.slots.register(
+      { name: "sidebar.footer.action", id: "composeStudio", order: 80 },
+      PanelIcon
+    ),
+    "compose-studio: sidebar entry"
+  );
 
-  // 主面板：三栏编辑器
-  ctx.slots.inject("main", function* () {
-    yield ctx.slots.register({
-      name: "main",
-      key: "composeStudio",              // MainPanelId
-      children: {
-        "composeStudio.palette":  { kind: "single", scope: "root" },
-        "composeStudio.canvas":   { kind: "single", scope: "root" },
-        "composeStudio.inspector":{ kind: "single", scope: "root" }
-      }
-    }, ComposeStudioPanel);
-  });
-
-  // 侧栏入口图标
-  ctx.slots.inject("sidebar.panellist", () => ctx.slots.register({
-    name: "sidebar.panellist",
-    id: "composeStudio",
-    order: 80,
-    label: () => t("panelTitle")
-  }, PanelIcon));
+  // 编辑器浮层（shell.overlay，list slot，additive）
+  ctx.effect(
+    () => ctx.slots.register(
+      { name: "shell.overlay", id: "composeStudio", order: 80 },
+      ComposeStudioPanel
+    ),
+    "compose-studio: overlay panel"
+  );
 }
 ```
+
+**实测修正（2026-11-09）**：原设计稿的 `ctx.slots.inject("main", ...)`、
+`sidebar.panellist` keyed slot、`composeStudio.*` 子 slot 均为臆测，DSH 0.1.0-rc.7
+中不存在。真实机制见 4.5。
 
 ### 4.5 Slot 契约（declare module 扩充）
 
 ```ts
-// src/shared/contract.ts
-export const SLOT = {
-  MAIN: "main",
-  PANEL_LIST: "sidebar.panellist",
-  PALETTE: "composeStudio.palette",
-  CANVAS: "composeStudio.canvas",
-  INSPECTOR: "composeStudio.inspector",
-  THEME: "composeStudio.theme",
-} as const;
-
+// src/shared/invariant.ts（实测修订：移除臆测的 slot 名）
 export const RPC_PREFIX = "/compose-studio";
 export const PROTOCOL_VERSION = 1;
+export const MAIN_PANEL_ID = "composeStudio";
+// RPC 方法名保持预留（doc/load、doc/save、codegen/generate、llm/generate、theme/resolve）
 ```
 
 ```ts
-declare module "@deepseek-ai/dsh-client-ui-slots" {
-  interface SlotMap {
-    "composeStudio.palette":   { kind: "single"; scope: "root" };
-    "composeStudio.canvas":    { kind: "single"; scope: "root" };
-    "composeStudio.inspector": { kind: "single"; scope: "root" };
-    "composeStudio.theme":     { kind: "single"; scope: "root" };
-  }
-}
+// 真实 Slot 机制（DSH 0.1.0-rc.7 实测）：
+// - SlotMap 通过 declare module "@deepseek-ai/dsh-client-ui-slots" 扩充（interface 合并）
+// - ctx.slots.register(options, Component) 注册；ctx.effect 管理生命周期
+// - list slot（additive，可安全注册）：shell.overlay、sidebar.footer.action
+// - single slot（独占，注册会 shadow 宿主）：root（AppFrame 占用）、sidebar、conversation、details
+// - 内置 slot 由宿主插件声明，本插件只注册 list 类型 slot
+//
+// 本插件注册：
+// - sidebar.footer.action（id=composeStudio, order=80）→ 侧栏入口图标
+// - shell.overlay（id=composeStudio, order=80）→ 编辑器浮层面板
 ```
+
+**实测修正（2026-11-09）**：原稿的 `SLOT` 常量（main / sidebar.panellist /
+composeStudio.*）为臆测，DSH 0.1.0-rc.7 中不存在这些 slot。真实机制已在上文修正。
 
 ### 4.6 Tool 契约
 

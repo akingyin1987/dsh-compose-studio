@@ -10,15 +10,9 @@ export const PROTOCOL_VERSION = 1;
 /** 主面板 id（main keyed slot 的 key，也是侧栏 panellist 的 id）。 */
 export const MAIN_PANEL_ID = "composeStudio";
 
-/** Slot 名常量，与 shared/contract.ts 保持一致。 */
-export const SLOT = {
-  MAIN: "main",
-  PANEL_LIST: "sidebar.panellist",
-  PALETTE: "composeStudio.palette",
-  CANVAS: "composeStudio.canvas",
-  INSPECTOR: "composeStudio.inspector",
-  THEME: "composeStudio.theme",
-} as const;
+// 注意：原稿的 SLOT 常量（main / sidebar.panellist / composeStudio.*）为臆测，
+// DSH 0.1.0-rc.7 中不存在这些 slot。真实 slot 名直接写在 src/client/index.tsx
+// 的 register 调用处（sidebar.footer.action、shell.overlay）。
 
 /** RPC 方法名。 */
 export const RPC_METHOD = {

@@ -37,7 +37,7 @@
 
 | 决策 | 结论 | 理由 |
 |---|---|---|
-| 编辑器宿主 | `main` keyed slot + `sidebar.panellist` | 三栏需整幅宽度 |
+| 编辑器宿主 | `sidebar.footer.action`（入口）+ `shell.overlay`（浮层面板） | 实测：DSH 0.1.0-rc.7 无 main keyed slot；list slot 可安全注册 |
 | 预览保真 | Compose Web 真实渲染 + React overlay 交互 | 与生成代码同源 |
 | 客户端框架 | React（宿主一致，复用 primitives） | 宿主 `dsh-client-ui-*` 均为 React |
 | 状态管理 | 单一数据源 + Reducer + 逆操作栈 | design.md 3/6 节 |

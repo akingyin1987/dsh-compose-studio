@@ -2,6 +2,17 @@
 // DSH 客户端通过 window.__ModuleLoader__.load 加载本文件。
 // factory 接收 require，用于解析宿主提供的 React 等模块。
 import React from "react";
+import type { ClientContext } from "@deepseek-ai/dsh-client-runtime/client";
+
+// 扩充 SlotMap：声明本插件使用的 slot（与宿主 layout/sidebar 插件声明一致）
+declare module "@deepseek-ai/dsh-client-ui-slots" {
+	interface SlotMap {
+		/** 全局浮层（list，additive）：编辑器面板容器。 */
+		"shell.overlay": { kind: "list"; scope: "root" };
+		/** 侧栏底部动作区（list）：编辑器入口。 */
+		"sidebar.footer.action": { kind: "list"; scope: "root" };
+	}
+}
 
 declare global {
 	interface Window {
@@ -14,29 +25,61 @@ declare global {
 	}
 }
 
+// 插件内通信事件（Phase 0 简化方案；Phase 1 改为 store/服务）
+const OPEN_EVENT = "compose-studio:open";
+
 // --- 主面板：三栏布局占位（Phase 0 骨架） ---
 function ComposeStudioPanel() {
+	const [visible, setVisible] = React.useState(true);
+
+	React.useEffect(() => {
+		const handler = () => setVisible(true);
+		window.addEventListener(OPEN_EVENT, handler);
+		return () => window.removeEventListener(OPEN_EVENT, handler);
+	}, []);
+
+	if (!visible) return null;
+
 	return (
 		<div
+			onClick={() => setVisible(false)}
 			style={{
+				position: "fixed",
+				inset: 0,
+				zIndex: 100,
 				display: "flex",
-				height: "100%",
-				fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
-				color: "#222",
-				background: "#fafafa",
+				alignItems: "center",
+				justifyContent: "center",
+				background: "rgba(0,0,0,0.4)",
 			}}
 		>
 			<div
+				onClick={(e) => e.stopPropagation()}
 				style={{
-					flex: 1,
+					width: "80%",
+					height: "80%",
+					borderRadius: 12,
+					boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
 					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					fontSize: 14,
-					color: "#666",
+					flexDirection: "column",
+					fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+					color: "#222",
+					background: "#fafafa",
+					overflow: "hidden",
 				}}
 			>
-				Compose Studio — Phase 0 skeleton
+				<div
+					style={{
+						flex: 1,
+						display: "flex",
+						alignItems: "center",
+						justifyContent: "center",
+						fontSize: 14,
+						color: "#666",
+					}}
+				>
+					Compose Studio — Phase 0 skeleton（点击遮罩关闭）
+				</div>
 			</div>
 		</div>
 	);
@@ -46,7 +89,13 @@ function ComposeStudioPanel() {
 function PanelIcon() {
 	return (
 		<span
-			style={{ display: "inline-flex", fontSize: 16, color: "currentColor" }}
+			onClick={() => window.dispatchEvent(new CustomEvent(OPEN_EVENT))}
+			style={{
+				display: "inline-flex",
+				fontSize: 16,
+				color: "currentColor",
+				cursor: "pointer",
+			}}
 		>
 			◆
 		</span>
@@ -54,38 +103,34 @@ function PanelIcon() {
 }
 
 // --- 客户端插件入口 ---
-interface ClientSlotContext {
-	slots: {
-		inject(name: string, factory: () => unknown): void;
-		register(options: Record<string, unknown>, component: unknown): unknown;
-	};
-}
+export function apply(ctx: ClientContext) {
+	// 侧栏入口（sidebar.footer.action，list slot）
+	ctx.effect(
+		() =>
+			ctx.slots.register(
+				{
+					name: "sidebar.footer.action",
+					id: "composeStudio",
+					order: 80,
+				},
+				PanelIcon
+			),
+		"compose-studio: sidebar entry"
+	);
 
-export function apply(ctx: ClientSlotContext) {
-	// 主面板（keyed slot）
-	ctx.slots.inject("main", function* () {
-		yield ctx.slots.register(
-			{
-				name: "main",
-				key: "composeStudio",
-				children: {},
-			},
-			ComposeStudioPanel
-		);
-	});
-
-	// 侧栏入口
-	ctx.slots.inject("sidebar.panellist", () =>
-		ctx.slots.register(
-			{
-				name: "sidebar.panellist",
-				id: "composeStudio",
-				order: 80,
-				label: () => "Compose Studio",
-			},
-			PanelIcon
-		)
+	// 编辑器浮层（shell.overlay，list slot）
+	ctx.effect(
+		() =>
+			ctx.slots.register(
+				{
+					name: "shell.overlay",
+					id: "composeStudio",
+					order: 80,
+				},
+				ComposeStudioPanel
+			),
+		"compose-studio: overlay panel"
 	);
 }
 
-export const inject = ["slots", "layout", "locale"];
+export const inject = ["slots"];

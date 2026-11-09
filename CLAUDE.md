@@ -46,10 +46,12 @@ npm run build       # node build.mjs：tsc 生成 d.ts + esbuild 打包 JS
   - `compose_studio_open` 工具（`defineTool`），供模型调用打开编辑器。
   - RPC 路由：`ctx.webServer.register({ kind: "prefix", path: "/compose-studio" })`，当前仅实现 `/compose-studio/ping`。
   - `inject = ["tools", "webServer", "llm", "workspace"]`。
-- **客户端** `lib/client.js`（源码 `src/client/index.tsx`）：由 DSH 客户端通过 `window.__ModuleLoader__.load({ id, factory })` 加载，factory 内通过 `require("react")` 获取宿主提供的 React（当前为占位面板，esbuild 打包为 `__ModuleLoader__` 格式）。
-  - 注册 `main` keyed slot（`key: "composeStudio"`）→ 三栏面板占位。
-  - 注册 `sidebar.panellist`（`id: "composeStudio"`, `order: 80`）→ 侧栏入口图标。
-  - `inject = ["slots", "layout", "locale"]`。
+- **客户端** `lib/client.js`（源码 `src/client/index.tsx`）：由 DSH 客户端通过 `window.__ModuleLoader__.load({ id, factory })` 加载，factory 内通过 `require("react")` 获取宿主提供的 React（esbuild 打包为 `__ModuleLoader__` 格式）。
+  - 真实 slot 机制（DSH 0.1.0-rc.7）：`ctx.effect(() => ctx.slots.register(options, Component))`；`SlotMap` 通过 `declare module "@deepseek-ai/dsh-client-ui-slots"` 扩充。
+  - 注册 `sidebar.footer.action`（list slot，id=composeStudio）→ 侧栏入口。
+  - 注册 `shell.overlay`（list slot，id=composeStudio）→ 编辑器浮层（Phase 0 占位）。
+  - `inject = ["slots"]`（locale/layout 服务 Phase 1 再引入）。
+  - ⚠️ 原设计稿的 `main` keyed slot / `sidebar.panellist` / `composeStudio.*` 子 slot 均为臆测，已废弃（见 design.md 实测修正）。
 
 ### 契约常量（lib/invariant.js）
 
@@ -67,6 +69,8 @@ npm run build       # node build.mjs：tsc 生成 d.ts + esbuild 打包 JS
 - **`.npmrc`**：`legacy-peer-deps=true`——宿主生态存在 peer 版本错配（cordis 4.0.1 与 cordis-plugin-include 1.1.0），忽略以避免安装失败。
 - 宿主包版本锚定本机 DSH 0.1.0-rc.7：`@deepseek-ai/*@0.1.0-rc.8`、`cordis@4.0.1`、`schemastery@3.18.1`、`react@18.3.1`；升级 DSH 时需同步核对。
 - 服务端 Context 类型扩充需 side-effect import 触发（`import "@deepseek-ai/dsh-host-webserver"` 等，见 `src/server/index.ts`）。
+- 客户端类型包：`dsh-client-runtime`（ClientContext）、`dsh-client-ui-slots`（SlotMap）、`dsh-client-ui-primitives`，均已锚定 0.1.0-rc.8。
+- devDeps 包含完整宿主包链（服务端 + 客户端，由 `scripts/collect-host-deps.mjs` 迭代收集）；这些包**不进入发布产物**（`files` 只含 lib/ 等）。
 
 ### 预览运行时（设计蓝图，Phase 1 落地）
 

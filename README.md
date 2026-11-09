@@ -9,12 +9,12 @@
 
 | 阶段 | 状态 | 说明 |
 |---|---|---|
-| Phase 0 — 契约验证 Spike | ✅ 进行中 | 插件骨架 + Compose Web 工具链已跑通 |
-| Phase 1 — MVP 可视化编辑 | ⬜ 待启动 | 组件树 / 画布 / 属性面板 / 代码生成 |
+| Phase 0 — 契约验证 Spike | ✅ 主体完成 | 插件骨架 + Compose Web 工具链 + TS 构建链（T3）；客户端契约已按实测修正 |
+| Phase 1 — MVP 可视化编辑 | ⬜ 待启动 | 组件树 / 画布 / 属性面板 / 代码生成（计划见 `tasks/plan.md`） |
 | Phase 2 — 主题与多端 | ⬜ 待启动 | M3 主题、手机/平板/CMP 预览 |
 | Phase 3 — LLM 辅助 | ⬜ 待启动 | 自然语言生成组件树 |
 
-完整设计见 [`docs/design.md`](docs/design.md)。
+完整设计见 [`docs/design.md`](docs/design.md)，实施计划见 [`tasks/plan.md`](tasks/plan.md)。
 
 ---
 
@@ -24,14 +24,21 @@
 dsh-compose-studio/
 ├── package.json            # DSH 插件清单（dsh.bundle.patch / dsh.client）
 ├── cordis.patch.yml        # 挂载声明（dsh plugin add 时自动追加到 profile）
-├── lib/
-│   ├── index.js            # 服务端入口（Cordis apply：工具 + RPC）
-│   ├── client.js           # 客户端入口（window.__ModuleLoader__，React）
-│   └── invariant.js        # 双半共享常量（Slot / RPC / 版本）
+├── build.mjs               # 构建脚本（tsc 生成 d.ts + esbuild 打包）
+├── tsconfig.json           # 类型检查配置（覆盖 src/）
+├── tsconfig.build.json     # 构建配置（emitDeclarationOnly）
+├── src/                    # TS 源码（勿手改 lib/，它是构建产物）
+│   ├── shared/invariant.ts # 双半共享常量（RPC / 版本）
+│   ├── server/index.ts     # 服务端入口（Cordis apply：工具 + RPC）
+│   └── client/index.tsx    # 客户端入口（__ModuleLoader__，React + slot 注册）
+├── lib/                    # 构建产物（index.js / client.js / invariant.js + d.ts）
 ├── spike/
 │   └── compose-web-hello/  # Phase 0 工具链验证工程（Kotlin/JS + Compose Web）
+├── tasks/
+│   ├── plan.md             # 实施计划
+│   └── todo.md             # 任务清单与验收状态
 ├── docs/
-│   └── design.md           # 完整设计文档
+│   └── design.md           # 完整设计文档（客户端契约已按实测修正）
 └── README.md
 ```
 

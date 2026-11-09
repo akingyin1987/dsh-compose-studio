@@ -3,7 +3,6 @@ import {
 	RPC_PREFIX,
 	PROTOCOL_VERSION,
 	MAIN_PANEL_ID,
-	SLOT,
 	RPC_METHOD,
 } from "../invariant.js";
 
@@ -12,15 +11,6 @@ describe("invariant 契约常量", () => {
 		expect(RPC_PREFIX).toBe("/compose-studio");
 		expect(PROTOCOL_VERSION).toBe(1);
 		expect(MAIN_PANEL_ID).toBe("composeStudio");
-	});
-
-	it("Slot 名与 design.md 契约一致", () => {
-		expect(SLOT.MAIN).toBe("main");
-		expect(SLOT.PANEL_LIST).toBe("sidebar.panellist");
-		expect(SLOT.PALETTE).toBe("composeStudio.palette");
-		expect(SLOT.CANVAS).toBe("composeStudio.canvas");
-		expect(SLOT.INSPECTOR).toBe("composeStudio.inspector");
-		expect(SLOT.THEME).toBe("composeStudio.theme");
 	});
 
 	it("RPC 方法名预留完整", () => {
