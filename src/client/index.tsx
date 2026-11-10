@@ -2,9 +2,14 @@
 // DSH 客户端通过 window.__ModuleLoader__.load 加载本文件。
 // factory 接收 require，用于解析宿主提供的 React 等模块。
 import React from "react";
+import { useReducer, useEffect, useState } from "react";
 import type { ClientContext } from "@deepseek-ai/dsh-client-runtime/client";
+import { reducer, createInitialState } from "./store.js";
+import { ComponentPalette } from "./palette/ComponentPalette.js";
+import { Canvas } from "./canvas/Canvas.js";
+import { Inspector } from "./inspector/Inspector.js";
 
-// 扩充 SlotMap：声明本插件使用的 slot（与宿主 layout/sidebar 插件声明一致）
+// 扩充 SlotMap：声明本插件使用的 slot（interface 合并，与宿主声明一致）
 declare module "@deepseek-ai/dsh-client-ui-slots" {
 	interface SlotMap {
 		/** 全局浮层（list，additive）：编辑器面板容器。 */
@@ -28,11 +33,12 @@ declare global {
 // 插件内通信事件（Phase 0 简化方案；Phase 1 改为 store/服务）
 const OPEN_EVENT = "compose-studio:open";
 
-// --- 主面板：三栏布局占位（Phase 0 骨架） ---
+// --- 主面板：三栏布局（组件面板 / 画布 / 属性面板） ---
 function ComposeStudioPanel() {
-	const [visible, setVisible] = React.useState(true);
+	const [visible, setVisible] = useState(true);
+	const [state, dispatch] = useReducer(reducer, null, createInitialState);
 
-	React.useEffect(() => {
+	useEffect(() => {
 		const handler = () => setVisible(true);
 		window.addEventListener(OPEN_EVENT, handler);
 		return () => window.removeEventListener(OPEN_EVENT, handler);
@@ -56,29 +62,43 @@ function ComposeStudioPanel() {
 			<div
 				onClick={(e) => e.stopPropagation()}
 				style={{
-					width: "80%",
+					display: "flex",
+					width: "90%",
 					height: "80%",
 					borderRadius: 12,
 					boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
-					display: "flex",
-					flexDirection: "column",
-					fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+					fontFamily:
+						"system-ui, -apple-system, 'Segoe UI', sans-serif",
 					color: "#222",
 					background: "#fafafa",
 					overflow: "hidden",
 				}}
 			>
+				{/* 左：组件面板 */}
 				<div
 					style={{
-						flex: 1,
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						fontSize: 14,
-						color: "#666",
+						width: 240,
+						flexShrink: 0,
+						borderRight: "1px solid #e0e0e0",
+						background: "#fff",
+						overflow: "hidden",
 					}}
 				>
-					Compose Studio — Phase 0 skeleton（点击遮罩关闭）
+					<ComponentPalette />
+				</div>
+				{/* 中：画布 */}
+				<Canvas state={state} dispatch={dispatch} />
+				{/* 右：属性面板 */}
+				<div
+					style={{
+						width: 320,
+						flexShrink: 0,
+						borderLeft: "1px solid #e0e0e0",
+						background: "#fff",
+						overflow: "auto",
+					}}
+				>
+					<Inspector state={state} dispatch={dispatch} />
 				</div>
 			</div>
 		</div>

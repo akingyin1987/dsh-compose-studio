@@ -179,13 +179,14 @@
 **Description:** 按 PropSchema 动态生成表单（fields：string/number/enum/color/dp/spacing/text-style/event/slot）；编辑 → `node/updateProps` → canvas 实时刷新；处理空选/多选状态。
 
 **Acceptance criteria:**
-- [ ] 全部 PropSchema kind 有对应字段组件
-- [ ] 属性编辑实时反映到画布
-- [ ] 空选/多选状态显示正确
+- [x] 全部 PropSchema kind 有对应字段组件（string/number/boolean/enum/color/dp/spacing/text-style/event/slot）
+- [x] 属性编辑实时反映到画布（node/updateProps → reducer → Canvas 订阅）
+- [x] 空选/多选状态显示正确（getSelectedNode + 空态提示）
 
 **Verification:**
-- [ ] Tests pass: `npm test`
-- [ ] Manual check: 编辑属性后画布刷新
+- [x] Tests pass: `npm test`（48 passed，含 getSelectedNode/getPropSchemas 单测）
+- [x] typecheck 通过
+- [ ] Manual check: 集成后手动验证属性编辑联动
 
 **Dependencies:** Task 7
 
@@ -298,6 +299,8 @@
 - [ ] 生成代码风格符合 `docs/design.md` 7.3 示例
 - [ ] 快照测试覆盖全部组件
 - [ ] imports 无冗余/缺失
+- [ ] 注释规范（design.md 7.1.1）：文件头/区域/事件 TODO/交互注释
+- [ ] 性能优化（design.md 7.1.2）：remember/derivedStateOf/@Immutable、Modifier 顺序、Lazy key
 
 **Verification:**
 - [ ] Tests pass: `npm test`

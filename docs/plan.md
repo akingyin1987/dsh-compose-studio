@@ -27,7 +27,7 @@
 | T4.5 | Config schema（官方指南合规） | ✅ | T4 | schemastery schema + settings namespace 注册；默认值测试（36 tests） |
 | T6 | ComponentCatalog + Palette | ✅ | T5 | 11 个 M3 组件；分类树 + 搜索 + 拖拽源（33 tests） |
 | T7 | Canvas 与节点渲染 | ✅ | T5 | buildRenderTree + 嵌套渲染 + 选中 + 缩放网格（42 tests） |
-| T8 | Inspector 属性面板 | ⬜ | T7 | PropSchema 全字段；实时联动 |
+| T8 | Inspector 属性面板 | ✅ | T7 | PropSchema 全字段动态表单；实时联动（48 tests） |
 | T9 | 拖拽编排 | ⬜ | T6,T7 | 拖放/重排/级联删除；undo/redo |
 | T10 | preview-runtime 包 | ⬜ | T4,T6 | renderPreview 渲染真实 M3；字体解析 |
 | T11 | Canvas 接入 Compose Web 真实渲染 | ⬜ | T7,T10 | 真实 M3 替换占位；降级可用 |
@@ -43,7 +43,7 @@
 |---|---|---|---|
 | CP1 | T1-T2 后 | Phase 0 完成；互操作与加载策略有结论 | ✅ |
 | CP2 | T3-T5 后 | 工具链全绿；契约与 store 单测通过 | ✅ |
-| CP3 | T6-T9 后 | 可视化编排闭环可演示 | ⬜ |
+| CP3 | T6-T9 后 | 可视化编排闭环可演示 | 🟡 T6/T7/T8 完成 |
 | CP4 | T10-T11 后 | 真实 M3 预览可演示 | ⬜ |
 | CP5 | T12-T14 后 | 代码生成导出闭环 | ⬜ |
 | CP6 | T15-T16 后 | MVP 完成 | ⬜ |

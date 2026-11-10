@@ -2,6 +2,8 @@
 import type { CanvasDocument, Node, ContainerNode } from "../shared/document.js";
 import { isContainerNode } from "../shared/document.js";
 import type { ThemeSpec } from "../shared/theme.js";
+import { createDefaultTheme } from "../shared/theme.js";
+import { BUILTIN_DEVICES } from "../shared/device.js";
 
 export const HISTORY_LIMIT = 100;
 export const MERGE_WINDOW_MS = 800;
@@ -64,6 +66,52 @@ export type Action =
 	| { type: "history/redo"; ts?: number };
 
 const now = (): number => Date.now();
+
+// ===== 初始状态（示例文档） =====
+
+/** 创建初始状态（含示例文档：Scaffold > Column > [Text, Button]）。 */
+export function createInitialState(): StudioState {
+	const root: ContainerNode = {
+		id: "root",
+		type: "Scaffold",
+		props: {},
+		children: ["col"],
+	};
+	const col: ContainerNode = {
+		id: "col",
+		type: "Column",
+		props: { spacing: 16 },
+		children: ["title", "btn"],
+	};
+	const title: Node = {
+		id: "title",
+		type: "m3.Text",
+		props: { text: "Compose Studio" },
+		text: "Compose Studio",
+	};
+	const btn: Node = { id: "btn", type: "m3.Button", props: {} };
+	const doc: CanvasDocument = {
+		version: 1,
+		id: "doc-initial",
+		name: "Untitled",
+		createdAt: now(),
+		updatedAt: now(),
+		root,
+		nodes: { root, col, title, btn },
+		theme: createDefaultTheme(),
+		devices: BUILTIN_DEVICES,
+		activeDeviceId: "phone",
+	};
+	return {
+		document: doc,
+		selection: { ids: [], anchorId: null },
+		clipboard: null,
+		theme: createDefaultTheme(),
+		device: { activeId: "phone", zoom: 1, showGrid: false },
+		history: { undo: [], redo: [] },
+		ui: { leftWidth: 240, rightWidth: 320, inspectorTab: "props" },
+	};
+}
 
 /** 同步 root 引用（doc 操作后 root 对象可能变化）。 */
 function syncRoot(doc: CanvasDocument): CanvasDocument {
