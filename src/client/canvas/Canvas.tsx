@@ -4,6 +4,7 @@ import type { CanvasDocument, Node, ContainerNode, LeafNode } from "../../shared
 import { isContainerNode } from "../../shared/document.js";
 import { getBuiltinDevice } from "../../shared/device.js";
 import type { StudioState, Action } from "../store.js";
+import { PreviewNode } from "./PreviewRenderer.js";
 
 // ===== 渲染树（纯数据，可测试） =====
 
@@ -141,7 +142,7 @@ export function Canvas({
 					backgroundSize: "20px 20px",
 				}}
 			>
-				<RenderNodeView node={tree} onSelect={handleSelect} />
+				<PreviewNode node={tree} onSelect={handleSelect} />
 			</div>
 		</div>
 	);
