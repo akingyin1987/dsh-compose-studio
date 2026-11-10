@@ -1,10 +1,10 @@
 import type { ClientContext } from "@deepseek-ai/dsh-client-runtime/client";
 declare module "@deepseek-ai/dsh-client-ui-slots" {
     interface SlotMap {
-        /** 全局浮层（list，additive）：编辑器面板容器。 */
-        "shell.overlay": {
-            kind: "list";
-            scope: "root";
+        /** 主内容区（single，session-maybe）：编辑器视图（注册会替换会话内容）。 */
+        conversation: {
+            kind: "single";
+            scope: "session-maybe";
         };
         /** 侧栏底部动作区（list）：编辑器入口。 */
         "sidebar.footer.action": {

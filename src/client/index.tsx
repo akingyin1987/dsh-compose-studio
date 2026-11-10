@@ -1,19 +1,18 @@
 // dsh-compose-studio —— 客户端入口
 // DSH 客户端通过 window.__ModuleLoader__.load 加载本文件。
-// factory 接收 require，用于解析宿主提供的 React 等模块。
-import React from "react";
-import { useReducer, useEffect, useState } from "react";
+// 方案 A：编辑器注册到 conversation slot（主内容区），侧栏图标切换，返回按钮注销。
+import React, { useReducer } from "react";
 import type { ClientContext } from "@deepseek-ai/dsh-client-runtime/client";
 import { reducer, createInitialState } from "./store.js";
 import { ComponentPalette } from "./palette/ComponentPalette.js";
 import { Canvas } from "./canvas/Canvas.js";
 import { Inspector } from "./inspector/Inspector.js";
 
-// 扩充 SlotMap：声明本插件使用的 slot（interface 合并，与宿主声明一致）
+// 扩充 SlotMap（与宿主 layout 插件声明一致）
 declare module "@deepseek-ai/dsh-client-ui-slots" {
 	interface SlotMap {
-		/** 全局浮层（list，additive）：编辑器面板容器。 */
-		"shell.overlay": { kind: "list"; scope: "root" };
+		/** 主内容区（single，session-maybe）：编辑器视图（注册会替换会话内容）。 */
+		conversation: { kind: "single"; scope: "session-maybe" };
 		/** 侧栏底部动作区（list）：编辑器入口。 */
 		"sidebar.footer.action": { kind: "list"; scope: "root" };
 	}
@@ -30,86 +29,89 @@ declare global {
 	}
 }
 
-// 插件内通信事件（Phase 0 简化方案；Phase 1 改为 store/服务）
-const OPEN_EVENT = "compose-studio:open";
-
-// --- 主面板：三栏布局（组件面板 / 画布 / 属性面板） ---
-function ComposeStudioPanel() {
-	const [visible, setVisible] = useState(true);
+// --- 三栏面板（内嵌主内容区，带"返回会话"按钮） ---
+function ComposeStudioPanel({ onClose }: { onClose: () => void }) {
 	const [state, dispatch] = useReducer(reducer, null, createInitialState);
-
-	useEffect(() => {
-		const handler = () => setVisible(true);
-		window.addEventListener(OPEN_EVENT, handler);
-		return () => window.removeEventListener(OPEN_EVENT, handler);
-	}, []);
-
-	if (!visible) return null;
 
 	return (
 		<div
-			onClick={() => setVisible(false)}
 			style={{
-				position: "fixed",
-				inset: 0,
-				zIndex: 100,
 				display: "flex",
-				alignItems: "center",
-				justifyContent: "center",
-				background: "rgba(0,0,0,0.4)",
+				width: "100%",
+				height: "100%",
+				background: "#fafafa",
+				overflow: "hidden",
 			}}
 		>
+			{/* 左：组件面板 */}
 			<div
-				onClick={(e) => e.stopPropagation()}
 				style={{
-					display: "flex",
-					width: "90%",
-					height: "80%",
-					borderRadius: 12,
-					boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
-					fontFamily:
-						"system-ui, -apple-system, 'Segoe UI', sans-serif",
-					color: "#222",
-					background: "#fafafa",
+					width: 240,
+					flexShrink: 0,
+					borderRight: "1px solid #e0e0e0",
+					background: "#fff",
 					overflow: "hidden",
 				}}
 			>
-				{/* 左：组件面板 */}
+				<ComponentPalette />
+			</div>
+			{/* 中：画布（含顶栏） */}
+			<div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
 				<div
 					style={{
-						width: 240,
-						flexShrink: 0,
-						borderRight: "1px solid #e0e0e0",
+						height: 48,
+						display: "flex",
+						alignItems: "center",
+						padding: "0 16px",
+						borderBottom: "1px solid #e0e0e0",
 						background: "#fff",
-						overflow: "hidden",
+						gap: 12,
 					}}
 				>
-					<ComponentPalette />
+					<button
+						onClick={onClose}
+						style={{
+							border: "1px solid #d0d0d0",
+							background: "#fff",
+							borderRadius: 6,
+							padding: "4px 12px",
+							fontSize: 13,
+							cursor: "pointer",
+						}}
+					>
+						← 返回会话
+					</button>
+					<span style={{ fontSize: 14, fontWeight: 600 }}>
+						Compose Studio
+					</span>
 				</div>
-				{/* 中：画布 */}
 				<Canvas state={state} dispatch={dispatch} />
-				{/* 右：属性面板 */}
-				<div
-					style={{
-						width: 320,
-						flexShrink: 0,
-						borderLeft: "1px solid #e0e0e0",
-						background: "#fff",
-						overflow: "auto",
-					}}
-				>
-					<Inspector state={state} dispatch={dispatch} />
-				</div>
+			</div>
+			{/* 右：属性面板 */}
+			<div
+				style={{
+					width: 320,
+					flexShrink: 0,
+					borderLeft: "1px solid #e0e0e0",
+					background: "#fff",
+					overflow: "auto",
+				}}
+			>
+				<Inspector state={state} dispatch={dispatch} />
 			</div>
 		</div>
 	);
 }
 
 // --- 侧栏入口图标 ---
-function PanelIcon() {
+function PanelIcon({ onClick }: { onClick: () => void }) {
 	return (
 		<span
-			onClick={() => window.dispatchEvent(new CustomEvent(OPEN_EVENT))}
+			onClick={(e) => {
+				e.stopPropagation();
+				onClick();
+			}}
+			title="Compose Studio"
 			style={{
 				display: "inline-flex",
 				fontSize: 16,
@@ -124,7 +126,26 @@ function PanelIcon() {
 
 // --- 客户端插件入口 ---
 export function apply(ctx: ClientContext) {
-	// 侧栏入口（sidebar.footer.action，list slot）
+	// 编辑器注册状态（null = 未打开，会话视图）
+	let disposeEditor: (() => void) | null = null;
+
+	const closeEditor = (): void => {
+		disposeEditor?.();
+		disposeEditor = null;
+	};
+
+	const openEditor = (): void => {
+		if (disposeEditor) return; // 已打开
+		disposeEditor = ctx.slots.register(
+			{
+				name: "conversation",
+			},
+			// wrapper：注入 onClose（slot 组件参数由框架注入）
+			() => <ComposeStudioPanel onClose={closeEditor} />,
+		);
+	};
+
+	// 侧栏入口（点击打开编辑器）
 	ctx.effect(
 		() =>
 			ctx.slots.register(
@@ -133,23 +154,9 @@ export function apply(ctx: ClientContext) {
 					id: "composeStudio",
 					order: 80,
 				},
-				PanelIcon
+				() => <PanelIcon onClick={openEditor} />,
 			),
 		"compose-studio: sidebar entry"
-	);
-
-	// 编辑器浮层（shell.overlay，list slot）
-	ctx.effect(
-		() =>
-			ctx.slots.register(
-				{
-					name: "shell.overlay",
-					id: "composeStudio",
-					order: 80,
-				},
-				ComposeStudioPanel
-			),
-		"compose-studio: overlay panel"
 	);
 }
 
