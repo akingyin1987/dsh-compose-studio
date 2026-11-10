@@ -168,15 +168,19 @@ export function apply(ctx: ClientContext) {
 		console.log("[compose-studio] openEditor", { disposeEditor });
 		if (disposeEditor) return; // 已打开
 		// 用 inject 等待 conversation slot 声明（避免加载顺序问题）
-		disposeEditor = ctx.slots.inject("conversation", () =>
-			ctx.slots.register(
+		disposeEditor = ctx.slots.inject("conversation", () => {
+			console.log("[compose-studio] conversation inject fired, registering");
+			return ctx.slots.register(
 				{
 					name: "conversation",
 				},
 				// wrapper：注入 onClose（slot 组件参数由框架注入）
 				() => <ComposeStudioPanel onClose={closeEditor} />,
-			),
-		);
+			);
+		});
+		console.log("[compose-studio] inject done", {
+			disposeEditor: typeof disposeEditor,
+		});
 	};
 
 	// 侧栏入口（点击打开编辑器）
