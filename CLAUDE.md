@@ -42,16 +42,16 @@ npm run build       # node build.mjs：tsc 生成 d.ts + esbuild 打包 JS
 
 插件分为服务端与客户端两半，契约集中在 `lib/invariant.js`（双半共享，不得引入 Node 或浏览器专有 API）：
 
-- **服务端** `lib/index.js`（源码 `src/server/index.ts`）：ESM Cordis 插件，`apply(ctx)` 注册能力。
-  - `compose_studio_open` 工具（`defineTool`），供模型调用打开编辑器。
-  - RPC 路由：`ctx.webServer.register({ kind: "prefix", path: "/compose-studio" })`，当前仅实现 `/compose-studio/ping`。
-  - `inject = ["tools", "webServer", "llm", "workspace"]`。
+- **服务端** `lib/index.js`（源码 `src/server/index.ts`）：ESM Cordis 插件，`apply(ctx, config)` 注册能力。
+  - **DSH 0.2.2**：服务注入用 `ctx.inject(["tools", "webServer"], callback)` 命令式（替代 `export const inject`）。
+  - 配置：`Config` schema 通过插件的 `Config` 导出由框架自动读取（`ctx.settings.register` 已废弃）。
+  - `compose_studio_open` 工具（`defineTool`）+ RPC 路由（`ctx.webServer.register`，当前仅 `/compose-studio/ping`）。
 - **客户端** `lib/client.js`（源码 `src/client/index.tsx`）：由 DSH 客户端通过 `window.__ModuleLoader__.load({ id, factory })` 加载，factory 内通过 `require("react")` 获取宿主提供的 React（esbuild 打包为 `__ModuleLoader__` 格式）。
-  - 真实 slot 机制（DSH 0.1.0-rc.7）：`ctx.effect(() => ctx.slots.register(options, Component))`；`SlotMap` 通过 `declare module "@deepseek-ai/dsh-client-ui-slots"` 扩充。
-  - 注册 `sidebar.footer.action`（list slot，id=composeStudio）→ 侧栏入口。
-  - 注册 `shell.overlay`（list slot，id=composeStudio）→ 编辑器浮层（Phase 0 占位）。
-  - `inject = ["slots"]`（locale/layout 服务 Phase 1 再引入）。
-  - ⚠️ 原设计稿的 `main` keyed slot / `sidebar.panellist` / `composeStudio.*` 子 slot 均为臆测，已废弃（见 design.md 实测修正）。
+  - **DSH 0.2.2 实测机制**：`ctx.slots.inject(slotName, () => ctx.slots.register(options, Component))`（先等待 slot 声明再注册，避免加载顺序问题）；`SlotMap` 通过 `declare module "@deepseek-ai/dsh-client-ui-slots"` 扩充。
+  - 注册 `main` slot（**keyed**，`key: "composeStudio"`）→ 编辑器面板（主内容区，通过 `ctx.layout.selectPanel("composeStudio")` 切换；`null` = 会话）。
+  - 注册 `sidebar.footer.action`（list，id=composeStudio）→ 侧栏入口（SVG 布局图标 + "Studio"）。
+  - `inject = ["slots", "layout"]`。
+  - ⚠️ 0.1.0 的 `shell.overlay` 浮层方案与直接 register 已废弃（见 design.md 实测修正）。
 
 ### 契约常量（lib/invariant.js）
 
@@ -67,9 +67,9 @@ npm run build       # node build.mjs：tsc 生成 d.ts + esbuild 打包 JS
 - **peerDependencies**：宿主运行时提供的包（`@deepseek-ai/*` 服务端/客户端包、react），与社区插件（dsh-better-sidebar）一致。
 - **devDependencies**：同版本安装用于类型检查，外加构建工具（typescript、vitest、esbuild）。
 - **`.npmrc`**：`legacy-peer-deps=true`——宿主生态存在 peer 版本错配（cordis 4.0.1 与 cordis-plugin-include 1.1.0），忽略以避免安装失败。
-- 宿主包版本锚定本机 DSH 0.1.0-rc.7：`@deepseek-ai/*@0.1.0-rc.8`、`cordis@4.0.1`、`schemastery@3.18.1`、`react@18.3.1`；升级 DSH 时需同步核对。
+- 宿主包版本锚定本机 DSH 0.2.2-rc.1：`@deepseek-ai/*@0.2.2-rc.1`、`cordis@4.1.0`、`schemastery@3.19.0`、`react@18.3.1`（部分包 0.2.2 未发布，回退最新可用版本：dsh-client-runtime@0.1.1-rc.2、dsh-agent-presets@0.1.6-alpha.2 等）。
 - 服务端 Context 类型扩充需 side-effect import 触发（`import "@deepseek-ai/dsh-host-webserver"` 等，见 `src/server/index.ts`）。
-- 客户端类型包：`dsh-client-runtime`（ClientContext）、`dsh-client-ui-slots`（SlotMap）、`dsh-client-ui-primitives`，均已锚定 0.1.0-rc.8。
+- 客户端类型包：`dsh-client-runtime`（ClientContext）、`dsh-client-ui-slots`（SlotMap）、`dsh-client-ui-layout`（ILayout）、`dsh-client-ui-primitives`。
 - devDeps 包含完整宿主包链（服务端 + 客户端，由 `scripts/collect-host-deps.mjs` 迭代收集）；这些包**不进入发布产物**（`files` 只含 lib/ 等）。
 
 ### 预览运行时（设计蓝图，Phase 1 落地）

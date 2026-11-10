@@ -1,6 +1,6 @@
 // dsh-compose-studio —— 客户端入口
-// DSH 客户端通过 window.__ModuleLoader__.load 加载本文件。
-// 方案 A：编辑器注册到 conversation slot（主内容区），侧栏图标切换，返回按钮注销。
+// DSH 0.2.2：注册到 main slot（主面板，panel 系统），
+// 通过 ctx.layout.selectPanel(id) 切换（null = 会话）。
 import React, { useReducer } from "react";
 import type { ClientContext } from "@deepseek-ai/dsh-client-runtime/client";
 import { reducer, createInitialState } from "./store.js";
@@ -12,8 +12,8 @@ import { ChatPanel } from "./chat/ChatPanel.js";
 // 扩充 SlotMap（与宿主 layout 插件声明一致）
 declare module "@deepseek-ai/dsh-client-ui-slots" {
 	interface SlotMap {
-		/** 主内容区（single，session-maybe）：编辑器视图（注册会替换会话内容）。 */
-		conversation: { kind: "single"; scope: "session-maybe" };
+		/** 主面板（keyed，root）：编辑器 panel（key=composeStudio）。 */
+		main: { kind: "keyed"; scope: "root" };
 		/** 侧栏底部动作区（list）：编辑器入口。 */
 		"sidebar.footer.action": { kind: "list"; scope: "root" };
 	}
@@ -30,8 +30,21 @@ declare global {
 	}
 }
 
-// --- 三栏面板（内嵌主内容区，带"返回会话"按钮） ---
-function ComposeStudioPanel({ onClose }: { onClose: () => void }) {
+// layout 服务最小接口（避免引入完整 layout 类型；selectPanel 切换主面板）
+interface LayoutService {
+	selectPanel(panelId: string | null): void;
+}
+declare module "@deepseek-ai/cordis" {
+	interface Context {
+		layout: LayoutService;
+	}
+}
+
+/** panel id（MainPanelId 为 branded type，此处用字面量） */
+const PANEL_ID = "composeStudio";
+
+// --- 三栏面板（内嵌主面板，带"返回会话"按钮） ---
+function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 	const [state, dispatch] = useReducer(reducer, null, createInitialState);
 
 	return (
@@ -73,7 +86,7 @@ function ComposeStudioPanel({ onClose }: { onClose: () => void }) {
 						}}
 					>
 						<button
-							onClick={onClose}
+							onClick={onBack}
 							style={{
 								border: "1px solid #d0d0d0",
 								background: "#fff",
@@ -140,11 +153,8 @@ function PanelIcon({ onClick }: { onClick: () => void }) {
 				fill="currentColor"
 				style={{ flexShrink: 0 }}
 			>
-				{/* 顶部栏 */}
 				<rect x="1" y="1" width="14" height="4.5" rx="1.5" opacity="0.9" />
-				{/* 左列 */}
 				<rect x="1" y="7" width="6" height="8" rx="1.5" opacity="0.65" />
-				{/* 右列 */}
 				<rect x="9" y="7" width="6" height="8" rx="1.5" opacity="0.65" />
 			</svg>
 			Studio
@@ -154,56 +164,41 @@ function PanelIcon({ onClick }: { onClick: () => void }) {
 
 // --- 客户端插件入口 ---
 export function apply(ctx: ClientContext) {
-	console.log("[compose-studio] apply called");
-	try {
-	// 编辑器注册状态（null = 未打开，会话视图）
-	let disposeEditor: (() => void) | null = null;
+	// 注册 main panel（id=composeStudio，通过 selectPanel 切换）
+	ctx.effect(
+		() =>
+			ctx.slots.inject("main", () =>
+				ctx.slots.register(
+					{ name: "main", key: PANEL_ID },
+					() => (
+						<ComposeStudioPanel
+							onBack={() => ctx.layout.selectPanel(null)}
+						/>
+					),
+				),
+			),
+		"compose-studio: main panel",
+	);
 
-	const closeEditor = (): void => {
-		disposeEditor?.();
-		disposeEditor = null;
-	};
-
-	const openEditor = (): void => {
-		console.log("[compose-studio] openEditor", { disposeEditor });
-		if (disposeEditor) return; // 已打开
-		// 用 inject 等待 conversation slot 声明（避免加载顺序问题）
-		disposeEditor = ctx.slots.inject("conversation", () => {
-			console.log("[compose-studio] conversation inject fired, registering");
-			return ctx.slots.register(
-				{
-					name: "conversation",
-				},
-				// wrapper：注入 onClose（slot 组件参数由框架注入）
-				() => <ComposeStudioPanel onClose={closeEditor} />,
-			);
-		});
-		console.log("[compose-studio] inject done", {
-			disposeEditor: typeof disposeEditor,
-		});
-	};
-
-	// 侧栏入口（点击打开编辑器）
-	// 用 inject 等待 sidebar.footer.action 声明（sidebar 插件可能晚于本插件加载）
+	// 侧栏入口（点击切换到编辑器 panel）
 	ctx.effect(
 		() =>
 			ctx.slots.inject("sidebar.footer.action", () =>
 				ctx.slots.register(
 					{
 						name: "sidebar.footer.action",
-						id: "composeStudio",
+						id: PANEL_ID,
 						order: 80,
 					},
-					() => <PanelIcon onClick={openEditor} />,
+					() => (
+						<PanelIcon
+							onClick={() => ctx.layout.selectPanel(PANEL_ID)}
+						/>
+					),
 				),
 			),
-		"compose-studio: sidebar entry"
+		"compose-studio: sidebar entry",
 	);
-		console.log("[compose-studio] apply OK");
-	} catch (e) {
-		console.error("[compose-studio] apply FAILED:", e);
-		throw e;
-	}
 }
 
-export const inject = ["slots"];
+export const inject = ["slots", "layout"];

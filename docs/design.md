@@ -323,42 +323,54 @@ window.__ModuleLoader__.load({
 ```
 
 ```ts
-// src/client/index.tsx（源码形态，基于 DSH 0.1.0-rc.7 真实契约）
+// src/client/index.tsx（源码形态，基于 DSH 0.2.2 真实契约）
 import type { ClientContext } from "@deepseek-ai/dsh-client-runtime/client";
 
-// 扩充 SlotMap：声明本插件使用的 slot（interface 合并，与宿主声明一致）
+// 扩充 SlotMap（与宿主 layout/sidebar 插件声明一致）
 declare module "@deepseek-ai/dsh-client-ui-slots" {
   interface SlotMap {
-    "shell.overlay": { kind: "list"; scope: "root" };
+    main: { kind: "keyed"; scope: "root" };            // 主面板（panel 系统）
     "sidebar.footer.action": { kind: "list"; scope: "root" };
   }
 }
 
-export const inject = ["slots"];
+// layout 服务最小接口（selectPanel 切换主面板）
+interface LayoutService {
+  selectPanel(panelId: string | null): void;
+}
+declare module "@deepseek-ai/cordis" {
+  interface Context { layout: LayoutService; }
+}
+
+export const inject = ["slots", "layout"];
 
 export function apply(ctx: ClientContext): void {
-  // 侧栏入口（sidebar.footer.action，list slot，additive）
+  // 主面板（keyed，key=composeStudio；ctx.layout.selectPanel 切换）
   ctx.effect(
-    () => ctx.slots.register(
-      { name: "sidebar.footer.action", id: "composeStudio", order: 80 },
-      PanelIcon
+    () => ctx.slots.inject("main", () =>
+      ctx.slots.register({ name: "main", key: "composeStudio" }, ComposeStudioPanel)
     ),
-    "compose-studio: sidebar entry"
+    "compose-studio: main panel"
   );
 
-  // 编辑器浮层（shell.overlay，list slot，additive）
+  // 侧栏入口（list，id=composeStudio）
   ctx.effect(
-    () => ctx.slots.register(
-      { name: "shell.overlay", id: "composeStudio", order: 80 },
-      ComposeStudioPanel
+    () => ctx.slots.inject("sidebar.footer.action", () =>
+      ctx.slots.register(
+        { name: "sidebar.footer.action", id: "composeStudio", order: 80 },
+        PanelIcon
+      )
     ),
-    "compose-studio: overlay panel"
+    "compose-studio: sidebar entry"
   );
 }
 ```
 
-**实测修正（2026-11-09）**：原设计稿的 `ctx.slots.inject("main", ...)`、
-`sidebar.panellist` keyed slot、`composeStudio.*` 子 slot 均为臆测，DSH 0.1.0-rc.7
+**实测修正（2026-11-10，DSH 0.2.2）**：
+- 主面板用 `main` slot（**keyed** 类型，`key: "composeStudio"`），通过 `ctx.layout.selectPanel("composeStudio")` 切换（`null` = 会话视图）。
+- 注册必须用 `ctx.slots.inject(slotName, () => ctx.slots.register(...))` 包裹（等待 slot 声明，避免加载顺序问题）。
+- `shell.overlay` 浮层方案（0.1.0）已废弃。
+- 原设计稿的 `sidebar.panellist`、`composeStudio.*` 子 slot 均为臆测。
 中不存在。真实机制见 4.5。
 
 ### 4.5 Slot 契约（declare module 扩充）
@@ -372,16 +384,17 @@ export const MAIN_PANEL_ID = "composeStudio";
 ```
 
 ```ts
-// 真实 Slot 机制（DSH 0.1.0-rc.7 实测）：
+// 真实 Slot 机制（DSH 0.2.2 实测）：
 // - SlotMap 通过 declare module "@deepseek-ai/dsh-client-ui-slots" 扩充（interface 合并）
-// - ctx.slots.register(options, Component) 注册；ctx.effect 管理生命周期
-// - list slot（additive，可安全注册）：shell.overlay、sidebar.footer.action
-// - single slot（独占，注册会 shadow 宿主）：root（AppFrame 占用）、sidebar、conversation、details
-// - 内置 slot 由宿主插件声明，本插件只注册 list 类型 slot
+// - 注册：ctx.slots.inject(slotName, () => ctx.slots.register(options, Component))
+//   （先等待 slot 声明，避免加载顺序问题；ctx.effect 管理生命周期）
+// - keyed slot（main）：多 entry 按 key 区分，用 key 字段；panel 系统（ctx.layout.selectPanel 切换）
+// - list slot（sidebar.footer.action）：多 entry，用 id/order 字段
+// - 内置 slot 由宿主插件声明（layout 声明 main/sidebar/conversation；sidebar 声明 footer.action）
 //
 // 本插件注册：
-// - sidebar.footer.action（id=composeStudio, order=80）→ 侧栏入口图标
-// - shell.overlay（id=composeStudio, order=80）→ 编辑器浮层面板
+// - main（key=composeStudio）→ 编辑器面板（主内容区）
+// - sidebar.footer.action（id=composeStudio, order=80）→ 侧栏入口（SVG 图标）
 ```
 
 **实测修正（2026-11-09）**：原稿的 `SLOT` 常量（main / sidebar.panellist /

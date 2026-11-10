@@ -40,7 +40,10 @@ dsh-compose-studio/
 │       ├── index.tsx       # 客户端入口（__ModuleLoader__，React + slot 注册）
 │       ├── store.ts        # 状态管理（reducer + 逆操作栈）
 │       ├── canvas/
-│       │   └── Canvas.tsx  # 画布（文档树渲染 + 选中 + 缩放/网格）
+│       │   ├── Canvas.tsx           # 画布（文档树渲染 + 选中 + 缩放/网格）
+│       │   └── PreviewRenderer.tsx  # M3 风格预览渲染（降级预览）
+│       ├── chat/
+│       │   └── ChatPanel.tsx        # AI 聊天调整面板（Phase 3 LLM 入口）
 │       └── palette/
 │           ├── catalog.ts           # 组件目录（11 个 M3 组件）
 │           └── ComponentPalette.tsx # 组件面板（分类树 + 搜索 + 拖拽源）
@@ -93,7 +96,7 @@ gradle jsBrowserProductionWebpack --no-daemon
 
 ### 构建环境要求
 
-- Node.js ≥ 20（已验证 v24）
+- Node.js ≥ 24.9.0（DSH 0.2.2 要求；已验证 v24.9.0）
 - JDK ≥ 17（已验证 Corretto 21）
 - Gradle（已验证 9.7.1）
 - **Gradle 堆内存 ≥ 4GB**（Kotlin/JS IR 编译器在 `body lowering` 阶段会 OOM）

@@ -11,7 +11,9 @@
 - ✅ 服务端工具 + RPC（`compose_studio_open` / `/compose-studio/ping`）
 - ✅ Compose Web 工具链验证（Kotlin 2.1.21 + CMP 1.9.0）
 - ✅ TS 构建测试工具链（T3，commit `3218e06`）
-- ✅ 客户端契约实测修正（commit `c86e3b9`）：`sidebar.footer.action` + `shell.overlay`
+- ✅ 客户端契约实测修正（DSH 0.2.2）：`main` keyed slot（panel 系统，`ctx.layout.selectPanel` 切换）+ `sidebar.footer.action`
+- ✅ 三栏面板集成（Palette + Canvas + Inspector）+ M3 风格预览渲染 + 底部 AI 聊天面板
+- ✅ DSH 0.2.2-rc.1 适配（Node 24.9.0；ctx.inject 命令式；Config 导出；main slot）
 - ⬜ React ↔ Compose Web 互操作验证（T1）
 - ⬜ 包体积与加载策略验证（T2）
 
@@ -24,7 +26,9 @@
 | T3 | TypeScript 构建与测试工具链 | ✅ | - | typecheck/test/build 全绿；DSH 安装成功 |
 | T4 | shared 契约层 | ✅ | T3 | 类型与 design.md 一致；不变式单测（11 tests） |
 | T5 | 客户端 store + reducer + 历史栈 | ✅ | T4 | reducer 覆盖全部 Action；undo/redo + 合并 + 上限单测（27 tests） |
-| T4.5 | Config schema（官方指南合规） | ✅ | T4 | schemastery schema + settings namespace 注册；默认值测试（36 tests） |
+| T4.5 | Config schema（官方指南合规） | ✅ | T4 | schemastery schema + Config 导出（36 tests） |
+| T8.5 | 三栏集成 + M3 预览 + 聊天面板 | ✅ | T6-T8 | Palette+Canvas+Inspector 集成；PreviewRenderer；ChatPanel |
+| T17 | DSH 0.2.2-rc.1 适配 | ✅ | - | ctx.inject 命令式；Config 导出；main keyed slot；Node 24.9.0 |
 | T6 | ComponentCatalog + Palette | ✅ | T5 | 11 个 M3 组件；分类树 + 搜索 + 拖拽源（33 tests） |
 | T7 | Canvas 与节点渲染 | ✅ | T5 | buildRenderTree + 嵌套渲染 + 选中 + 缩放网格（42 tests） |
 | T8 | Inspector 属性面板 | ✅ | T7 | PropSchema 全字段动态表单；实时联动（48 tests） |
