@@ -5,13 +5,13 @@ import type { Context } from "@deepseek-ai/cordis";
 import "@deepseek-ai/dsh-host-webserver";
 import "@deepseek-ai/dsh-llm";
 import "@deepseek-ai/dsh-settings";
-import { settingsNamespace } from "@deepseek-ai/dsh-settings";
 import { RPC_PREFIX, PROTOCOL_VERSION, MAIN_PANEL_ID } from "../shared/invariant.js";
 import { ConfigSchema, CONFIG_NAMESPACE, type Config } from "./config.js";
 
-// 注意：DSH 0.1.0-rc.7 无 "workspace" 服务（宿主为 workspaceRegistry，
-// 且非 inject 声明式服务）。Phase 1 需要工作区读写时再调研正确服务名。
-export const inject = ["tools", "webServer", "llm", "settings"];
+// 注意：DSH 0.2.2 起配置 schema 通过插件的 Config 导出由框架自动读取，
+// 不再需要 ctx.settings.register（宿主改用 ctx.settings.configure 配置 UI）。
+export { ConfigSchema as Config };
+export const inject = ["tools", "webServer", "llm"];
 
 /**
  * Cordis 插件入口。
@@ -19,9 +19,10 @@ export const inject = ["tools", "webServer", "llm", "settings"];
  * @param config - 解析后的配置（由 ConfigSchema 校验）。
  */
 export function apply(ctx: Context, config: Config) {
-	// --- 配置 schema（可调参数统一暴露） ---
-	// SettingsScope 随插件卸载自动清理（宿主实践：直接注册，不用 ctx.effect 包裹）
-	ctx.settings.register(settingsNamespace(CONFIG_NAMESPACE), ConfigSchema);
+	// --- 配置 ---
+	// DSH 0.2.2：Config schema 由框架从插件的 Config 导出自动读取，无需手动注册。
+	// config 参数（Config 类型）由框架注入，供后续任务使用。
+	void config;
 
 	// --- 工具：打开可视化编辑器 ---
 	ctx.effect(

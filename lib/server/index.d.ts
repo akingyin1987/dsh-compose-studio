@@ -2,7 +2,8 @@ import type { Context } from "@deepseek-ai/cordis";
 import "@deepseek-ai/dsh-host-webserver";
 import "@deepseek-ai/dsh-llm";
 import "@deepseek-ai/dsh-settings";
-import { type Config } from "./config.js";
+import { ConfigSchema, type Config } from "./config.js";
+export { ConfigSchema as Config };
 export declare const inject: string[];
 /**
  * Cordis 插件入口。
