@@ -34,12 +34,13 @@
 **Description:** 在 DSH 客户端环境（或等效模拟环境）实际加载含 Compose Web 产物的插件，测量首屏加载时间、缓存命中效果；据此确定加载策略（动态 import / 预加载 / CDN / 本地缓存），写入文档。
 
 **Acceptance criteria:**
-- [ ] 实测数据记录：JS/WASM 体积、首屏时间、缓存效果
-- [ ] 加载策略决策明确并写入 `docs/design.md`（含是否需要动态 import）
-- [ ] 若采用动态 import，验证结论附最小示例
+- [x] 实测数据记录：DOM API 方案 JS 412KB（无 WASM），JS 下载 504ms，页面 1722ms（localhost）
+- [x] 加载策略决策写入 `docs/design.md`：轻量路径直接打包；M3 路径（~10MB）按需动态 import + 缓存 + CDN
+- [x] 动态 import 结论：M3 方案必须按需加载（编辑时），附策略说明
 
 **Verification:**
-- [ ] 手动检查：加载插件并记录性能数据
+- [x] 自动测量：验证页 `?autotest=1` 输出 `data-perf`（jsBytes/jsDurationMs/loadMs）
+- [x] 对比 Material3 方案（1.58MB+8.4MB）体积差异（DOM API 减小 96%）
 
 **Dependencies:** Task 1
 

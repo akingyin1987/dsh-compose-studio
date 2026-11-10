@@ -1043,6 +1043,22 @@ export function reducer(state: StudioState, action: Action): StudioState;
 4. **WASM 加载**：Skiko WASM 需通过 HTTP(S) 加载，`file://` 会被 CORS 拦截。
 5. **产物体积**：~10MB（含 WASM）。需按需加载 / 浏览器缓存 / CDN 托管。
 
+### T2 验证结果（2026-11-10）
+
+| 方案 | JS | WASM | 总体积 | 加载时间（localhost） |
+|---|---|---|---|---|
+| DOM API（当前 spike） | 412 KB | 无 | 412 KB | JS 504ms / 页面 1722ms |
+| Material3（Skiko 渲染） | 1.58 MB | 8.4 MB | ~10 MB | 未实测（字体受限） |
+
+**加载策略决策**：
+1. **验证工具/轻量路径**：DOM API 方案（412KB），直接打包，无需动态加载
+2. **Phase 1 preview-runtime（M3 真实渲染）**：
+   - 产物 ~10MB（JS+WASM），**必须按需加载**（动态 import，打开编辑器时才加载）
+   - 浏览器缓存：WASM 长期缓存（hash 命名），避免重复下载
+   - 考虑 CDN 托管（跨项目/会话复用）
+   - 字体解析器：CMP 1.9.0 Web 不支持 FontFamilyResolver，需升级 CMP 或自定义实现
+3. **降级策略**：runtime 加载失败时回退 React 轻量映射（Phase 1 实现）
+
 ### T1 验证结果（2026-11-10）
 
 | 验证项 | 结果 |

@@ -123,6 +123,19 @@
 
 			function finish(msg) {
 				document.body.dataset.autotest = msg.indexOf('pass') === 0 ? 'pass' : 'fail';
+				// 性能数据（T2：包体积与加载策略验证）
+				const nav = performance.getEntriesByType('navigation')[0];
+				const res = performance.getEntriesByType('resource');
+				const js = res.find((r) => r.name.endsWith('compose-web-hello.js'));
+				const wasm = res.find((r) => r.name.endsWith('.wasm'));
+				document.body.dataset.perf = JSON.stringify({
+					loadMs: nav ? Math.round(nav.loadEventEnd - nav.startTime) : -1,
+					domContentLoadedMs: nav ? Math.round(nav.domContentLoadedEventEnd - nav.startTime) : -1,
+					jsBytes: js ? js.transferSize : -1,
+					wasmBytes: wasm ? wasm.transferSize : -1,
+					jsDurationMs: js ? Math.round(js.duration) : -1,
+					wasmDurationMs: wasm ? Math.round(wasm.duration) : -1
+				});
 				log('AUTOTEST ' + msg);
 			}
 		}
