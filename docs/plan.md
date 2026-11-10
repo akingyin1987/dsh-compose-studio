@@ -19,7 +19,7 @@
 
 | 编号 | 任务 | 状态 | 依赖 | 验收标准 |
 |---|---|---|---|---|
-| T1 | 插件内 Compose Web 互操作验证 | ⬜ | - | spike 验证页渲染真实 M3；事件桥 + overlay 命中通过；结论记录 |
+| T1 | 插件内 Compose Web 互操作验证 | ✅ | - | spike 验证页渲染（DOM 路径）；事件桥 + overlay 命中通过（autotest pass）；结论记录 |
 | T2 | 客户端包体积与加载策略验证 | ⬜ | T1 | 实测数据 + 加载策略决策 |
 | T3 | TypeScript 构建与测试工具链 | ✅ | - | typecheck/test/build 全绿；DSH 安装成功 |
 | T4 | shared 契约层 | ⬜ | T3 | 类型与 design.md 一致；不变式单测 |

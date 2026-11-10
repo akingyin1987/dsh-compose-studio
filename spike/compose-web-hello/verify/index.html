@@ -54,9 +54,9 @@
 					if (!nodeId) return;
 					log(`event: compose-web:activate nodeId=${nodeId}`);
 					// 命中测试：基于文档模型几何（此处用 Compose 渲染节点的 DOM 矩形模拟）
-					const node = document.querySelector(`[data-testid="${nodeId}"]`);
+					const node = document.querySelector(`#${nodeId}`);
 					if (!node) {
-						log(`miss: 未找到节点 ${nodeId}（testTag 未渲染为 data-testid?）`);
+						log(`miss: 未找到节点 #${nodeId}`);
 						return;
 					}
 					const rect = node.getBoundingClientRect();
@@ -85,6 +85,47 @@
 
 		ReactDOM.createRoot(document.getElementById('overlay')).render(e(Overlay));
 		log('overlay mounted（等待 Compose Web 事件）');
+
+		// --- autotest 模式（供 headless 浏览器自动验证，见 T1 验收）---
+		// 用法：index.html?autotest=1，结果写入 document.body.dataset.autotest
+		if (new URLSearchParams(location.search).get('autotest') === '1') {
+			let attempts = 0;
+			const timer = setInterval(() => {
+				attempts += 1;
+				const node = document.querySelector('#button-1');
+				if (node) {
+					clearInterval(timer);
+					runAutotest(node);
+				} else if (attempts > 100) {
+					clearInterval(timer);
+					finish('fail: 未找到 #button-1（Compose Web 未挂载）');
+				}
+			}, 100);
+
+			function runAutotest(node) {
+				log('autotest: 命中 button-1，派发点击序列');
+				const opts = { bubbles: true, cancelable: true, view: window };
+				node.dispatchEvent(new PointerEvent('pointerdown', opts));
+				node.dispatchEvent(new MouseEvent('mousedown', opts));
+				node.dispatchEvent(new PointerEvent('pointerup', opts));
+				node.dispatchEvent(new MouseEvent('mouseup', opts));
+				node.dispatchEvent(new MouseEvent('click', opts));
+				setTimeout(() => {
+					const hl = document.querySelector('#overlay .highlight');
+					if (hl) {
+						const r = hl.getBoundingClientRect();
+						finish('pass: overlay highlight ' + Math.round(r.width) + 'x' + Math.round(r.height));
+					} else {
+						finish('fail: overlay 未高亮（事件桥未触发或 React 未响应）');
+					}
+				}, 300);
+			}
+
+			function finish(msg) {
+				document.body.dataset.autotest = msg.indexOf('pass') === 0 ? 'pass' : 'fail';
+				log('AUTOTEST ' + msg);
+			}
+		}
 	</script>
 </body>
 </html>

@@ -1043,6 +1043,22 @@ export function reducer(state: StudioState, action: Action): StudioState;
 4. **WASM 加载**：Skiko WASM 需通过 HTTP(S) 加载，`file://` 会被 CORS 拦截。
 5. **产物体积**：~10MB（含 WASM）。需按需加载 / 浏览器缓存 / CDN 托管。
 
+### T1 验证结果（2026-11-10）
+
+| 验证项 | 结果 |
+|---|---|
+| Compose Web 渲染（DOM API） | ✅ 通过（HTTP 服务加载，WASM 正常） |
+| 事件桥（DOM 点击 → `compose-web:activate` → React overlay） | ✅ 通过 |
+| overlay 命中测试（DOM 矩形） | ✅ 通过（highlight 110x25） |
+| 自动验收（Chrome headless autotest） | ✅ pass（`index.html?autotest=1`） |
+| M3 组件（Material3 Text） | ⚠️ 受限：CMP 1.9.0 Web 无 FontFamilyResolver 公共 API |
+
+**实现模式**（供 Phase 1 preview-runtime 参考）：
+- 渲染：`renderComposable(rootElementId)` 挂载；Web 目标用 Skiko WASM
+- 事件桥：Compose Web 侧 `window.dispatchEvent(CustomEvent)`；React overlay 监听并高亮
+- 命中测试：基于节点 DOM 矩形（`getBoundingClientRect`），非 Compose 事件
+- 自动验收：autotest 模式（派发点击序列 → 检查 highlight → 写 `data-autotest`）
+
 ### 对设计的影响
 
 - 预览 runtime 方案（Compose Web 真实渲染）**技术可行**，但需接受 ~10MB 级产物与镜像约束。
