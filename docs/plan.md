@@ -23,7 +23,7 @@
 | T2 | 客户端包体积与加载策略验证 | ✅ | T1 | 实测数据（DOM 412KB）+ 加载策略决策 |
 | T3 | TypeScript 构建与测试工具链 | ✅ | - | typecheck/test/build 全绿；DSH 安装成功 |
 | T4 | shared 契约层 | ✅ | T3 | 类型与 design.md 一致；不变式单测（11 tests） |
-| T5 | 客户端 store + reducer + 历史栈 | ⬜ | T4 | reducer 覆盖全部 Action；undo/redo 单测 |
+| T5 | 客户端 store + reducer + 历史栈 | ✅ | T4 | reducer 覆盖全部 Action；undo/redo + 合并 + 上限单测（27 tests） |
 | T6 | ComponentCatalog + Palette | ⬜ | T5 | 组件清单覆盖；搜索 + 拖拽源 |
 | T7 | Canvas 与节点渲染 | ⬜ | T5 | 嵌套渲染；选中；缩放网格 |
 | T8 | Inspector 属性面板 | ⬜ | T7 | PropSchema 全字段；实时联动 |
@@ -41,7 +41,7 @@
 | 检查点 | 位置 | 判定标准 | 状态 |
 |---|---|---|---|
 | CP1 | T1-T2 后 | Phase 0 完成；互操作与加载策略有结论 | ✅ |
-| CP2 | T3-T5 后 | 工具链全绿；契约与 store 单测通过 | 🟡 T3 完成 |
+| CP2 | T3-T5 后 | 工具链全绿；契约与 store 单测通过 | ✅ |
 | CP3 | T6-T9 后 | 可视化编排闭环可演示 | ⬜ |
 | CP4 | T10-T11 后 | 真实 M3 预览可演示 | ⬜ |
 | CP5 | T12-T14 后 | 代码生成导出闭环 | ⬜ |

@@ -10,7 +10,7 @@
 | 阶段 | 状态 | 说明 |
 |---|---|---|
 | Phase 0 — 契约验证 Spike | ✅ 主体完成 | 插件骨架 + Compose Web 工具链 + TS 构建链（T3）；客户端契约已按实测修正 |
-| Phase 1 — MVP 可视化编辑 | ⬜ 待启动 | 组件树 / 画布 / 属性面板 / 代码生成（计划见 `tasks/plan.md`） |
+| Phase 1 — MVP 可视化编辑 | 🔵 进行中 | T3/T4/T5 完成（工具链 + 契约层 + store）；组件树 / 画布 / 属性面板 / 代码生成待实现（计划见 `tasks/plan.md`） |
 | Phase 2 — 主题与多端 | ⬜ 待启动 | M3 主题、手机/平板/CMP 预览 |
 | Phase 3 — LLM 辅助 | ⬜ 待启动 | 自然语言生成组件树 |
 
@@ -28,9 +28,17 @@ dsh-compose-studio/
 ├── tsconfig.json           # 类型检查配置（覆盖 src/）
 ├── tsconfig.build.json     # 构建配置（emitDeclarationOnly）
 ├── src/                    # TS 源码（勿手改 lib/，它是构建产物）
-│   ├── shared/invariant.ts # 双半共享常量（RPC / 版本）
+│   ├── shared/             # 双半共享契约
+│   │   ├── invariant.ts    # RPC / 版本常量
+│   │   ├── contract.ts     # 契约常量 + 真实 slot 名
+│   │   ├── document.ts     # CanvasDocument / Node / PropSchema + 不变式
+│   │   ├── theme.ts        # ThemeSpec（Material 3）
+│   │   ├── device.ts       # DeviceProfile + 内置设备
+│   │   └── validate.ts     # 文档校验（版本兼容 + 不变式）
 │   ├── server/index.ts     # 服务端入口（Cordis apply：工具 + RPC）
-│   └── client/index.tsx    # 客户端入口（__ModuleLoader__，React + slot 注册）
+│   └── client/
+│       ├── index.tsx       # 客户端入口（__ModuleLoader__，React + slot 注册）
+│       └── store.ts        # 状态管理（reducer + 逆操作栈）
 ├── lib/                    # 构建产物（index.js / client.js / invariant.js + d.ts）
 ├── spike/
 │   └── compose-web-hello/  # Phase 0 工具链验证工程（Kotlin/JS + Compose Web）

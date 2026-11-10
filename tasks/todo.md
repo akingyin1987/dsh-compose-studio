@@ -110,12 +110,13 @@
 **Description:** 实现 `src/client/store.ts`：StudioState、Action 联合类型、纯函数 reducer（覆盖 design.md 6.1 全部 Action）、逆操作栈 undo/redo（连续 `node/updateProps` 800ms 内合并、历史上限 100 可配置）。
 
 **Acceptance criteria:**
-- [ ] reducer 覆盖 design.md 6.1 全部 Action 类型
-- [ ] undo/redo 单测：含合并策略与历史上限
-- [ ] `npm test` 全绿
+- [x] reducer 覆盖 design.md 6.1 全部 Action 类型（含 node/restore 子树恢复）
+- [x] undo/redo 单测：含 800ms 合并策略与历史上限 100
+- [x] `npm test` 全绿（27 tests）
 
 **Verification:**
-- [ ] Tests pass: `npm test`
+- [x] Tests pass: `npm test`（27 passed）
+- [x] typecheck 通过
 
 **Dependencies:** Task 4
 
