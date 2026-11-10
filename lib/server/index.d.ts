@@ -4,7 +4,6 @@ import "@deepseek-ai/dsh-llm";
 import "@deepseek-ai/dsh-settings";
 import { ConfigSchema, type Config } from "./config.js";
 export { ConfigSchema as Config };
-export declare const inject: string[];
 /**
  * Cordis 插件入口。
  * @param ctx - 宿主上下文。
