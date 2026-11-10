@@ -22,7 +22,7 @@
 | T1 | 插件内 Compose Web 互操作验证 | ✅ | - | spike 验证页渲染（DOM 路径）；事件桥 + overlay 命中通过（autotest pass）；结论记录 |
 | T2 | 客户端包体积与加载策略验证 | ✅ | T1 | 实测数据（DOM 412KB）+ 加载策略决策 |
 | T3 | TypeScript 构建与测试工具链 | ✅ | - | typecheck/test/build 全绿；DSH 安装成功 |
-| T4 | shared 契约层 | ⬜ | T3 | 类型与 design.md 一致；不变式单测 |
+| T4 | shared 契约层 | ✅ | T3 | 类型与 design.md 一致；不变式单测（11 tests） |
 | T5 | 客户端 store + reducer + 历史栈 | ⬜ | T4 | reducer 覆盖全部 Action；undo/redo 单测 |
 | T6 | ComponentCatalog + Palette | ⬜ | T5 | 组件清单覆盖；搜索 + 拖拽源 |
 | T7 | Canvas 与节点渲染 | ⬜ | T5 | 嵌套渲染；选中；缩放网格 |

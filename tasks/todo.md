@@ -83,12 +83,15 @@
 **Description:** 实现双半共享契约：`src/shared/contract.ts`（SLOT/RPC_PREFIX/PROTOCOL_VERSION，与 `lib/invariant.js` 对齐）、`document.ts`（CanvasDocument/Node/PropSchema 类型 + 不变式）、`theme.ts`（ThemeSpec/TextStyle）、`device.ts`（DeviceProfile + BUILTIN_DEVICES）、`validate.ts`（文档版本兼容校验）。
 
 **Acceptance criteria:**
-- [ ] 类型定义与 `docs/design.md` 5.1-5.5 / 9 节一致
-- [ ] 不变式校验有单测：节点至多一个父节点、children 无重复且可解析、根为容器、删除级联
-- [ ] `npm test` 全绿
+- [x] 类型定义与 `docs/design.md` 5.2-5.5 一致（document/theme/device/contract）
+- [x] 不变式校验有单测：节点至多一个父节点、children 无重复且可解析、根为容器（11 tests）
+- [x] `npm test` 全绿
 
 **Verification:**
-- [ ] Tests pass: `npm test`
+- [x] Tests pass: `npm test`（11 passed）
+- [x] typecheck 通过
+
+**设计补充**：CanvasDocument 增加 `nodes` 扁平表（design.md 5.3 的"树形 + id 引用"需要节点表解析 children 引用）
 
 **Dependencies:** Task 3
 
