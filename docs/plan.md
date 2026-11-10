@@ -24,7 +24,8 @@
 | T3 | TypeScript 构建与测试工具链 | ✅ | - | typecheck/test/build 全绿；DSH 安装成功 |
 | T4 | shared 契约层 | ✅ | T3 | 类型与 design.md 一致；不变式单测（11 tests） |
 | T5 | 客户端 store + reducer + 历史栈 | ✅ | T4 | reducer 覆盖全部 Action；undo/redo + 合并 + 上限单测（27 tests） |
-| T6 | ComponentCatalog + Palette | ⬜ | T5 | 组件清单覆盖；搜索 + 拖拽源 |
+| T4.5 | Config schema（官方指南合规） | ✅ | T4 | schemastery schema + settings namespace 注册；默认值测试（36 tests） |
+| T6 | ComponentCatalog + Palette | ✅ | T5 | 11 个 M3 组件；分类树 + 搜索 + 拖拽源（33 tests） |
 | T7 | Canvas 与节点渲染 | ⬜ | T5 | 嵌套渲染；选中；缩放网格 |
 | T8 | Inspector 属性面板 | ⬜ | T7 | PropSchema 全字段；实时联动 |
 | T9 | 拖拽编排 | ⬜ | T6,T7 | 拖放/重排/级联删除；undo/redo |

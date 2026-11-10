@@ -5,7 +5,10 @@ import type { Context } from "@deepseek-ai/cordis";
 import "@deepseek-ai/dsh-host-webserver";
 import "@deepseek-ai/dsh-llm";
 import "@deepseek-ai/dsh-workspace";
+import "@deepseek-ai/dsh-settings";
+import { settingsNamespace } from "@deepseek-ai/dsh-settings";
 import { RPC_PREFIX, PROTOCOL_VERSION, MAIN_PANEL_ID } from "../shared/invariant.js";
+import { ConfigSchema, CONFIG_NAMESPACE, type Config } from "./config.js";
 
 // 注意：DSH 0.1.0-rc.7 无 "workspace" 服务（宿主为 workspaceRegistry，
 // 且非 inject 声明式服务）。Phase 1 需要工作区读写时再调研正确服务名。
@@ -14,8 +17,13 @@ export const inject = ["tools", "webServer", "llm"];
 /**
  * Cordis 插件入口。
  * @param ctx - 宿主上下文。
+ * @param config - 解析后的配置（由 ConfigSchema 校验）。
  */
-export function apply(ctx: Context) {
+export function apply(ctx: Context, config: Config) {
+	// --- 配置 schema（可调参数统一暴露） ---
+	// SettingsScope 随插件卸载自动清理（宿主实践：直接注册，不用 ctx.effect 包裹）
+	ctx.settings.register(settingsNamespace(CONFIG_NAMESPACE), ConfigSchema);
+
 	// --- 工具：打开可视化编辑器 ---
 	ctx.effect(
 		() =>

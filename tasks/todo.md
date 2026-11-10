@@ -133,13 +133,14 @@
 **Description:** 定义内置 M3 组件目录（`catalog.ts`：Text/Button/TextField/Card/Column/Row/Box/Image/Icon/Scaffold/TopAppBar 等，每个含 PropSchema/CodegenHint/PreviewSpec）；实现 `ComponentPalette.tsx`（分类树 + 搜索 + 拖拽源，drag source 携带 descriptor id）。
 
 **Acceptance criteria:**
-- [ ] catalog 覆盖 design.md Phase 1 列出的组件清单
-- [ ] palette 可搜索；拖拽源数据含组件 descriptor id
-- [ ] catalog 数据结构有单测
+- [x] catalog 覆盖 design.md Phase 1 列出的组件清单（11 个：布局 3 + M3 6 + 内容 2）
+- [x] palette 可搜索；拖拽源数据含组件 descriptor id（DND_MIME）
+- [x] catalog 数据结构有单测（6 个）
 
 **Verification:**
-- [ ] Tests pass: `npm test`
-- [ ] Manual check: palette 搜索与拖拽源可用
+- [x] Tests pass: `npm test`（33 passed）
+- [x] typecheck 通过
+- [ ] Manual check: palette 搜索与拖拽源可用（Phase 1 集成时手动验证）
 
 **Dependencies:** Task 5
 

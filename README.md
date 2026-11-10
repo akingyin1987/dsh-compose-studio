@@ -38,7 +38,10 @@ dsh-compose-studio/
 │   ├── server/index.ts     # 服务端入口（Cordis apply：工具 + RPC）
 │   └── client/
 │       ├── index.tsx       # 客户端入口（__ModuleLoader__，React + slot 注册）
-│       └── store.ts        # 状态管理（reducer + 逆操作栈）
+│       ├── store.ts        # 状态管理（reducer + 逆操作栈）
+│       └── palette/
+│           ├── catalog.ts           # 组件目录（11 个 M3 组件）
+│           └── ComponentPalette.tsx # 组件面板（分类树 + 搜索 + 拖拽源）
 ├── lib/                    # 构建产物（index.js / client.js / invariant.js + d.ts）
 ├── spike/
 │   └── compose-web-hello/  # Phase 0 工具链验证工程（Kotlin/JS + Compose Web）
