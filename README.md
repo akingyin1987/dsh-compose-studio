@@ -39,6 +39,8 @@ dsh-compose-studio/
 │   └── client/
 │       ├── index.tsx       # 客户端入口（__ModuleLoader__，React + slot 注册）
 │       ├── store.ts        # 状态管理（reducer + 逆操作栈）
+│       ├── canvas/
+│       │   └── Canvas.tsx  # 画布（文档树渲染 + 选中 + 缩放/网格）
 │       └── palette/
 │           ├── catalog.ts           # 组件目录（11 个 M3 组件）
 │           └── ComponentPalette.tsx # 组件面板（分类树 + 搜索 + 拖拽源）

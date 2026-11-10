@@ -156,13 +156,14 @@
 **Description:** 实现 `Canvas.tsx` 订阅 store、按文档树渲染 NodeView（React 占位渲染，几何来自文档模型）；节点选中高亮、缩放、网格开关。
 
 **Acceptance criteria:**
-- [ ] 嵌套容器结构正确渲染
-- [ ] 点击节点 → `selection/set` → overlay 高亮
-- [ ] 缩放/网格开关生效
+- [x] 嵌套容器结构正确渲染（buildRenderTree 递归 + 缺失节点安全跳过）
+- [x] 点击节点 → `selection/set` → 高亮（Canvas 组件 dispatch + RenderNodeView selected）
+- [x] 缩放/网格开关生效（device.zoom/showGrid）
 
 **Verification:**
-- [ ] Tests pass: `npm test`（store 集成）
-- [ ] Manual check: 选中与缩放
+- [x] Tests pass: `npm test`（42 passed，含 6 个 buildRenderTree 单测）
+- [x] typecheck 通过
+- [ ] Manual check: Phase 1 集成时手动验证选中与缩放
 
 **Dependencies:** Task 5
 
