@@ -110,24 +110,45 @@ function ComposeStudioPanel({ onClose }: { onClose: () => void }) {
 	);
 }
 
-// --- 侧栏入口图标 ---
+// --- 侧栏入口图标（布局/组件语义 SVG） ---
 function PanelIcon({ onClick }: { onClick: () => void }) {
 	return (
-		<span
+		<button
 			onClick={(e) => {
 				e.stopPropagation();
 				onClick();
 			}}
-			title="Compose Studio"
+			title="Compose Studio（可视化编辑器）"
 			style={{
 				display: "inline-flex",
-				fontSize: 16,
+				alignItems: "center",
+				gap: 4,
+				padding: "4px 8px",
+				borderRadius: 6,
+				border: "none",
+				background: "transparent",
 				color: "currentColor",
 				cursor: "pointer",
+				fontSize: 12,
+				lineHeight: 1,
 			}}
 		>
-			◆
-		</span>
+			<svg
+				width="14"
+				height="14"
+				viewBox="0 0 16 16"
+				fill="currentColor"
+				style={{ flexShrink: 0 }}
+			>
+				{/* 顶部栏 */}
+				<rect x="1" y="1" width="14" height="4.5" rx="1.5" opacity="0.9" />
+				{/* 左列 */}
+				<rect x="1" y="7" width="6" height="8" rx="1.5" opacity="0.65" />
+				{/* 右列 */}
+				<rect x="9" y="7" width="6" height="8" rx="1.5" opacity="0.65" />
+			</svg>
+			Studio
+		</button>
 	);
 }
 
@@ -144,6 +165,7 @@ export function apply(ctx: ClientContext) {
 	};
 
 	const openEditor = (): void => {
+		console.log("[compose-studio] openEditor", { disposeEditor });
 		if (disposeEditor) return; // 已打开
 		// 用 inject 等待 conversation slot 声明（避免加载顺序问题）
 		disposeEditor = ctx.slots.inject("conversation", () =>
