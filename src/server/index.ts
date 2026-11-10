@@ -4,7 +4,6 @@ import type { Context } from "@deepseek-ai/cordis";
 // 宿主包通过 declare module 扩充 Context，side-effect import 触发类型加载
 import "@deepseek-ai/dsh-host-webserver";
 import "@deepseek-ai/dsh-llm";
-import "@deepseek-ai/dsh-workspace";
 import "@deepseek-ai/dsh-settings";
 import { settingsNamespace } from "@deepseek-ai/dsh-settings";
 import { RPC_PREFIX, PROTOCOL_VERSION, MAIN_PANEL_ID } from "../shared/invariant.js";
@@ -12,7 +11,7 @@ import { ConfigSchema, CONFIG_NAMESPACE, type Config } from "./config.js";
 
 // 注意：DSH 0.1.0-rc.7 无 "workspace" 服务（宿主为 workspaceRegistry，
 // 且非 inject 声明式服务）。Phase 1 需要工作区读写时再调研正确服务名。
-export const inject = ["tools", "webServer", "llm"];
+export const inject = ["tools", "webServer", "llm", "settings"];
 
 /**
  * Cordis 插件入口。

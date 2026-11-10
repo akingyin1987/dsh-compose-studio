@@ -1,7 +1,6 @@
 import type { Context } from "@deepseek-ai/cordis";
 import "@deepseek-ai/dsh-host-webserver";
 import "@deepseek-ai/dsh-llm";
-import "@deepseek-ai/dsh-workspace";
 import "@deepseek-ai/dsh-settings";
 import { type Config } from "./config.js";
 export declare const inject: string[];
