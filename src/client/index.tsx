@@ -8,6 +8,7 @@ import { ComponentPalette } from "./palette/ComponentPalette.js";
 import { Canvas } from "./canvas/Canvas.js";
 import { Inspector } from "./inspector/Inspector.js";
 import { ChatPanel } from "./chat/ChatPanel.js";
+import { UI } from "./theme/ui.js";
 
 // 扩充 SlotMap（与宿主 layout 插件声明一致）
 declare module "@deepseek-ai/dsh-client-ui-slots" {
@@ -54,7 +55,9 @@ function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 				flexDirection: "column",
 				width: "100%",
 				height: "100%",
-				background: "#fafafa",
+				background: UI.bg,
+				color: UI.text,
+				fontFamily: UI.fontSans,
 				overflow: "hidden",
 			}}
 		>
@@ -62,13 +65,7 @@ function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 			<div style={{ display: "flex", flex: 1, minHeight: 0 }}>
 				{/* 左：组件面板 */}
 				<div
-					style={{
-						width: 240,
-						flexShrink: 0,
-						borderRight: "1px solid #e0e0e0",
-						background: "#fff",
-						overflow: "hidden",
-					}}
+					style={{ width: 240, flexShrink: 0, overflow: "hidden" }}
 				>
 					<ComponentPalette />
 				</div>
@@ -79,21 +76,23 @@ function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 							height: 48,
 							display: "flex",
 							alignItems: "center",
-							padding: "0 16px",
-							borderBottom: "1px solid #e0e0e0",
-							background: "#fff",
-							gap: 12,
+							padding: `0 ${UI.space.lg}px`,
+							borderBottom: `1px solid ${UI.border}`,
+							background: UI.surface,
+							gap: UI.space.md,
 						}}
 					>
 						<button
 							onClick={onBack}
 							style={{
-								border: "1px solid #d0d0d0",
-								background: "#fff",
-								borderRadius: 6,
-								padding: "4px 12px",
+								border: `1px solid ${UI.border}`,
+								background: UI.surfaceAlt,
+								color: UI.text,
+								borderRadius: UI.radius.md,
+								padding: `${UI.space.xs}px ${UI.space.md}px`,
 								fontSize: 13,
 								cursor: "pointer",
+								fontFamily: UI.fontSans,
 							}}
 						>
 							← 返回会话
@@ -109,8 +108,8 @@ function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 					style={{
 						width: 320,
 						flexShrink: 0,
-						borderLeft: "1px solid #e0e0e0",
-						background: "#fff",
+						borderLeft: `1px solid ${UI.border}`,
+						background: UI.surface,
 						overflow: "auto",
 					}}
 				>

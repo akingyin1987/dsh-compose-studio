@@ -72,6 +72,14 @@ npm run build       # node build.mjs：tsc 生成 d.ts + esbuild 打包 JS
 - 客户端类型包：`dsh-client-runtime`（ClientContext）、`dsh-client-ui-slots`（SlotMap）、`dsh-client-ui-layout`（ILayout）、`dsh-client-ui-primitives`。
 - devDeps 包含完整宿主包链（服务端 + 客户端，由 `scripts/collect-host-deps.mjs` 迭代收集）；这些包**不进入发布产物**（`files` 只含 lib/ 等）。
 
+### UI 设计
+
+- **主题**：Dark Mode（OLED）+ Material 3 语义色（参考 ui-ux-pro-max 设计系统 + Android Studio Darcula 风格）。
+- **tokens**：`src/client/theme/ui.ts`（`UI` 常量）——表面/文本/品牌色/圆角/间距/字体/阴影/过渡；组件统一引用 tokens（避免硬编码颜色）。
+- **字体**：系统字体 fallback（`system-ui` / `ui-monospace`），不依赖外部字体。
+- **组件**：ComponentPalette（组件面板）、Canvas + PreviewRenderer（M3 预览）、Inspector（属性表单）、ChatPanel（AI 聊天）。
+- **设备框**：画布内设备框保持浅色（模拟真实 Compose 屏幕），外层深色。
+
 ### 预览运行时（设计蓝图，Phase 1 落地）
 
 画布预览采用 **Compose Web 真实渲染**，与生成的 Compose 代码同源：

@@ -1,5 +1,6 @@
-// AI 聊天调整面板（Phase 3 LLM 辅助入口；当前为 UI 占位 + 消息记录）
+// AI 聊天调整面板（Phase 3 LLM 入口）—— Dark Mode 设计
 import React, { useState } from "react";
+import { UI } from "../theme/ui.js";
 
 export interface ChatMessage {
 	id: number;
@@ -7,10 +8,6 @@ export interface ChatMessage {
 	text: string;
 }
 
-/**
- * 聊天面板：底部输入框 + 消息历史。
- * Phase 3 将接入 ctx.llm：用户输入 → LLM 解析 → 调整文档（node/updateProps / add）。
- */
 export function ChatPanel() {
 	const [messages, setMessages] = useState<ChatMessage[]>([
 		{
@@ -40,20 +37,34 @@ export function ChatPanel() {
 	return (
 		<div
 			style={{
-				borderTop: "1px solid #e0e0e0",
-				background: "#fff",
+				borderTop: `1px solid ${UI.border}`,
+				background: UI.surface,
 				display: "flex",
 				flexDirection: "column",
 				maxHeight: 200,
+				fontFamily: UI.fontSans,
 			}}
 		>
+			{/* 标题 */}
+			<div
+				style={{
+					padding: `${UI.space.sm}px ${UI.space.lg}px ${UI.space.xs}px`,
+					fontSize: 11,
+					fontWeight: 600,
+					color: UI.textMuted,
+					letterSpacing: "0.05em",
+					textTransform: "uppercase",
+				}}
+			>
+				AI 调整
+			</div>
 			{/* 消息历史 */}
-			<div style={{ flex: 1, overflow: "auto", padding: "8px 12px" }}>
+			<div style={{ flex: 1, overflow: "auto", padding: `0 ${UI.space.lg}px` }}>
 				{messages.map((m) => (
 					<div
 						key={m.id}
 						style={{
-							marginBottom: 6,
+							marginBottom: UI.space.sm,
 							fontSize: 12,
 							textAlign: m.role === "user" ? "right" : "left",
 						}}
@@ -61,11 +72,16 @@ export function ChatPanel() {
 						<span
 							style={{
 								display: "inline-block",
-								padding: "4px 10px",
-								borderRadius: 8,
+								padding: `${UI.space.xs}px ${UI.space.md}px`,
+								borderRadius: UI.radius.lg,
 								background:
-									m.role === "user" ? "#e3f2fd" : "#f5f5f5",
+									m.role === "user" ? UI.primary : UI.surfaceAlt,
+								color: m.role === "user" ? UI.onPrimary : UI.text,
 								maxWidth: "80%",
+								border:
+									m.role === "user"
+										? "none"
+										: `1px solid ${UI.borderSubtle}`,
 							}}
 						>
 							{m.text}
@@ -74,33 +90,57 @@ export function ChatPanel() {
 				))}
 			</div>
 			{/* 输入框 */}
-			<div style={{ display: "flex", gap: 8, padding: "8px 12px" }}>
+			<div
+				style={{
+					display: "flex",
+					gap: UI.space.sm,
+					padding: `${UI.space.sm}px ${UI.space.lg}px ${UI.space.md}px`,
+				}}
+			>
 				<input
 					type="text"
 					value={text}
 					placeholder="描述想要的组件，如「添加一个登录表单」…"
-				 onChange={(e) => setText(e.target.value)}
+					onChange={(e) => setText(e.target.value)}
 					onKeyDown={(e) => {
 						if (e.key === "Enter") handleSend();
 					}}
 					style={{
 						flex: 1,
-						padding: "8px 12px",
-						border: "1px solid #d0d0d0",
-						borderRadius: 6,
+						padding: `${UI.space.sm}px ${UI.space.md}px`,
+						border: `1px solid ${UI.border}`,
+						borderRadius: UI.radius.md,
+						background: UI.surfaceAlt,
+						color: UI.text,
 						fontSize: 13,
+						outline: "none",
+						fontFamily: UI.fontSans,
+					}}
+					onFocus={(e) => {
+						e.currentTarget.style.borderColor = UI.focus;
+					}}
+					onBlur={(e) => {
+						e.currentTarget.style.borderColor = UI.border;
 					}}
 				/>
 				<button
 					onClick={handleSend}
 					style={{
-						padding: "8px 16px",
+						padding: `${UI.space.sm}px ${UI.space.lg}px`,
 						border: "none",
-						borderRadius: 6,
-						background: "#6750A4",
-						color: "#fff",
+						borderRadius: UI.radius.md,
+						background: UI.primary,
+						color: UI.onPrimary,
 						fontSize: 13,
 						cursor: "pointer",
+						fontFamily: UI.fontSans,
+						transition: `background ${UI.transition}`,
+					}}
+					onMouseEnter={(e) => {
+						e.currentTarget.style.background = UI.primaryHover;
+					}}
+					onMouseLeave={(e) => {
+						e.currentTarget.style.background = UI.primary;
 					}}
 				>
 					发送

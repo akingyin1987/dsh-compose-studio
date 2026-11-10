@@ -1,8 +1,9 @@
-// 属性面板（按 PropSchema 动态生成表单，docs/design.md 5.2）
+// 属性面板（按 PropSchema 动态生成表单）—— Dark Mode 设计
 import React from "react";
 import type { PropSchema, TextStyleSpec } from "../../shared/document.js";
 import type { StudioState, Action } from "../store.js";
 import { findDescriptor } from "../palette/catalog.js";
+import { UI } from "../theme/ui.js";
 
 // ===== PropField 字段组件 =====
 
@@ -14,8 +15,14 @@ function FieldRow({
 	children: React.ReactNode;
 }) {
 	return (
-		<div style={{ marginBottom: 10 }}>
-			<div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>
+		<div style={{ marginBottom: UI.space.md }}>
+			<div
+				style={{
+					fontSize: 12,
+					color: UI.textMuted,
+					marginBottom: UI.space.xs,
+				}}
+			>
 				{label}
 			</div>
 			{children}
@@ -25,11 +32,15 @@ function FieldRow({
 
 const inputStyle: React.CSSProperties = {
 	width: "100%",
-	padding: "5px 8px",
-	border: "1px solid #d0d0d0",
-	borderRadius: 4,
+	padding: `${UI.space.sm}px ${UI.space.md}px`,
+	border: `1px solid ${UI.border}`,
+	borderRadius: UI.radius.md,
 	fontSize: 13,
+	background: UI.surfaceAlt,
+	color: UI.text,
 	boxSizing: "border-box",
+	outline: "none",
+	fontFamily: UI.fontSans,
 };
 
 export function PropField({
@@ -74,6 +85,7 @@ export function PropField({
 						type="checkbox"
 						checked={typeof value === "boolean" ? value : schema.default ?? false}
 						onChange={(e) => onChange(e.target.checked)}
+						style={{ accentColor: UI.primary }}
 					/>
 				</FieldRow>
 			);
@@ -98,7 +110,7 @@ export function PropField({
 				<FieldRow label={schema.label}>
 					<input
 						type="color"
-						style={{ width: 40, height: 28, padding: 0 }}
+						style={{ width: 40, height: 28, padding: 0, border: `1px solid ${UI.border}` }}
 						value={typeof value === "string" ? value : schema.default ?? "#000000"}
 						onChange={(e) => onChange(e.target.value)}
 					/>
@@ -124,7 +136,7 @@ export function PropField({
 			};
 			return (
 				<FieldRow label={schema.label}>
-					<div style={{ display: "flex", gap: 8 }}>
+					<div style={{ display: "flex", gap: UI.space.sm }}>
 						<input
 							type="number"
 							style={inputStyle}
@@ -150,9 +162,7 @@ export function PropField({
 						style={inputStyle}
 						placeholder="fontSize (sp)"
 						value={v.fontSize ?? ""}
-						onChange={(e) =>
-							onChange({ ...v, fontSize: Number(e.target.value) })
-						}
+						onChange={(e) => onChange({ ...v, fontSize: Number(e.target.value) })}
 					/>
 				</FieldRow>
 			);
@@ -160,15 +170,15 @@ export function PropField({
 		case "event":
 			return (
 				<FieldRow label={schema.label}>
-					<div style={{ fontSize: 12, color: "#999" }}>
-						事件（{schema.actions.join(", ")}）— Phase 1 暂为占位
+					<div style={{ fontSize: 12, color: UI.textFaint }}>
+						事件（{schema.actions.join(", ")}）— Phase 1 占位
 					</div>
 				</FieldRow>
 			);
 		case "slot":
 			return (
 				<FieldRow label={schema.label}>
-					<div style={{ fontSize: 12, color: "#999" }}>
+					<div style={{ fontSize: 12, color: UI.textFaint }}>
 						槽（接受: {schema.accepts.join(", ")}）
 					</div>
 				</FieldRow>
@@ -180,7 +190,6 @@ export function PropField({
 
 // ===== 纯函数（可测试） =====
 
-/** 获取当前选中的节点（无选中返回 null）。 */
 export function getSelectedNode(
 	state: StudioState,
 ): import("../../shared/document.js").Node | null {
@@ -188,7 +197,6 @@ export function getSelectedNode(
 	return id ? (state.document.nodes[id] ?? null) : null;
 }
 
-/** 获取节点的可配置属性 schema（无 descriptor 返回空数组）。 */
 export function getPropSchemas(
 	node: import("../../shared/document.js").Node,
 ): PropSchema[] {
@@ -212,14 +220,15 @@ export function Inspector({
 		return (
 			<div
 				style={{
-					padding: 16,
-					color: "#999",
+					padding: UI.space.xl,
+					color: UI.textFaint,
 					fontSize: 13,
 					textAlign: "center",
+					fontFamily: UI.fontSans,
 				}}
 			>
 				未选中节点
-				<div style={{ fontSize: 11, marginTop: 4 }}>
+				<div style={{ fontSize: 11, marginTop: UI.space.xs }}>
 					点击画布中的节点查看属性
 				</div>
 			</div>
@@ -230,29 +239,28 @@ export function Inspector({
 	const propSchemas = descriptor?.defaultProps ?? [];
 
 	const handleChange = (key: string, value: unknown): void => {
-		dispatch({
-			type: "node/updateProps",
-			id: node.id,
-			patch: { [key]: value },
-		});
+		dispatch({ type: "node/updateProps", id: node.id, patch: { [key]: value } });
 	};
 
 	return (
-		<div style={{ padding: 12 }}>
+		<div style={{ padding: UI.space.md, fontFamily: UI.fontSans }}>
 			<div
 				style={{
 					fontSize: 13,
 					fontWeight: 600,
-					marginBottom: 8,
-					paddingBottom: 8,
-					borderBottom: "1px solid #eee",
+					color: UI.text,
+					marginBottom: UI.space.md,
+					paddingBottom: UI.space.sm,
+					borderBottom: `1px solid ${UI.border}`,
 				}}
 			>
 				{node.type}
 				{node.label ? ` · ${node.label}` : ""}
 			</div>
 			{propSchemas.length === 0 ? (
-				<div style={{ fontSize: 12, color: "#999" }}>该组件无可配置属性</div>
+				<div style={{ fontSize: 12, color: UI.textFaint }}>
+					该组件无可配置属性
+				</div>
 			) : (
 				propSchemas.map((schema) => (
 					<PropField

@@ -44,6 +44,8 @@ dsh-compose-studio/
 │       │   └── PreviewRenderer.tsx  # M3 风格预览渲染（降级预览）
 │       ├── chat/
 │       │   └── ChatPanel.tsx        # AI 聊天调整面板（Phase 3 LLM 入口）
+│       ├── theme/
+│       │   └── ui.ts                # 设计 tokens（Dark Mode + M3 语义色）
 │       └── palette/
 │           ├── catalog.ts           # 组件目录（11 个 M3 组件）
 │           └── ComponentPalette.tsx # 组件面板（分类树 + 搜索 + 拖拽源）

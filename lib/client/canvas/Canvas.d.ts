@@ -12,10 +12,6 @@ export interface RenderNode {
     props: Record<string, unknown>;
     text?: string;
 }
-/**
- * 从文档模型构建渲染树（纯函数）。
- * 几何/结构来自文档模型，不依赖真实组件渲染（Phase 1 由 Compose Web 替换）。
- */
 export declare function buildRenderTree(doc: CanvasDocument, selectedIds: Set<string>): RenderNode;
 export declare function Canvas({ state, dispatch, }: {
     state: StudioState;
