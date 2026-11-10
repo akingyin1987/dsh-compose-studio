@@ -133,6 +133,8 @@ function PanelIcon({ onClick }: { onClick: () => void }) {
 
 // --- 客户端插件入口 ---
 export function apply(ctx: ClientContext) {
+	console.log("[compose-studio] apply called");
+	try {
 	// 编辑器注册状态（null = 未打开，会话视图）
 	let disposeEditor: (() => void) | null = null;
 
@@ -143,28 +145,39 @@ export function apply(ctx: ClientContext) {
 
 	const openEditor = (): void => {
 		if (disposeEditor) return; // 已打开
-		disposeEditor = ctx.slots.register(
-			{
-				name: "conversation",
-			},
-			// wrapper：注入 onClose（slot 组件参数由框架注入）
-			() => <ComposeStudioPanel onClose={closeEditor} />,
+		// 用 inject 等待 conversation slot 声明（避免加载顺序问题）
+		disposeEditor = ctx.slots.inject("conversation", () =>
+			ctx.slots.register(
+				{
+					name: "conversation",
+				},
+				// wrapper：注入 onClose（slot 组件参数由框架注入）
+				() => <ComposeStudioPanel onClose={closeEditor} />,
+			),
 		);
 	};
 
 	// 侧栏入口（点击打开编辑器）
+	// 用 inject 等待 sidebar.footer.action 声明（sidebar 插件可能晚于本插件加载）
 	ctx.effect(
 		() =>
-			ctx.slots.register(
-				{
-					name: "sidebar.footer.action",
-					id: "composeStudio",
-					order: 80,
-				},
-				() => <PanelIcon onClick={openEditor} />,
+			ctx.slots.inject("sidebar.footer.action", () =>
+				ctx.slots.register(
+					{
+						name: "sidebar.footer.action",
+						id: "composeStudio",
+						order: 80,
+					},
+					() => <PanelIcon onClick={openEditor} />,
+				),
 			),
 		"compose-studio: sidebar entry"
 	);
+		console.log("[compose-studio] apply OK");
+	} catch (e) {
+		console.error("[compose-studio] apply FAILED:", e);
+		throw e;
+	}
 }
 
 export const inject = ["slots"];
