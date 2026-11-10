@@ -20,7 +20,8 @@ export { ConfigSchema as Config };
  */
 export function apply(ctx: Context, config: Config) {
 	void config;
-	ctx.inject(["tools", "webServer", "llm"], (child) => {
+	// 注意：0.2.2 服务名列表无 "llm"（Phase 3 需要时调研正确服务名，可能是 "agents"）
+	ctx.inject(["tools", "webServer"], (child) => {
 		// --- 工具：打开可视化编辑器 ---
 		child.effect(
 			() =>
