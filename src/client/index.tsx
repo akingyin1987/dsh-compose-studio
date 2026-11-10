@@ -7,6 +7,7 @@ import { reducer, createInitialState } from "./store.js";
 import { ComponentPalette } from "./palette/ComponentPalette.js";
 import { Canvas } from "./canvas/Canvas.js";
 import { Inspector } from "./inspector/Inspector.js";
+import { ChatPanel } from "./chat/ChatPanel.js";
 
 // 扩充 SlotMap（与宿主 layout 插件声明一致）
 declare module "@deepseek-ai/dsh-client-ui-slots" {
@@ -37,68 +38,74 @@ function ComposeStudioPanel({ onClose }: { onClose: () => void }) {
 		<div
 			style={{
 				display: "flex",
+				flexDirection: "column",
 				width: "100%",
 				height: "100%",
 				background: "#fafafa",
 				overflow: "hidden",
 			}}
 		>
-			{/* 左：组件面板 */}
-			<div
-				style={{
-					width: 240,
-					flexShrink: 0,
-					borderRight: "1px solid #e0e0e0",
-					background: "#fff",
-					overflow: "hidden",
-				}}
-			>
-				<ComponentPalette />
-			</div>
-			{/* 中：画布（含顶栏） */}
-			<div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+			{/* 三栏区域 */}
+			<div style={{ display: "flex", flex: 1, minHeight: 0 }}>
+				{/* 左：组件面板 */}
 				<div
 					style={{
-						height: 48,
-						display: "flex",
-						alignItems: "center",
-						padding: "0 16px",
-						borderBottom: "1px solid #e0e0e0",
+						width: 240,
+						flexShrink: 0,
+						borderRight: "1px solid #e0e0e0",
 						background: "#fff",
-						gap: 12,
+						overflow: "hidden",
 					}}
 				>
-					<button
-						onClick={onClose}
+					<ComponentPalette />
+				</div>
+				{/* 中：画布（含顶栏） */}
+				<div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+					<div
 						style={{
-							border: "1px solid #d0d0d0",
+							height: 48,
+							display: "flex",
+							alignItems: "center",
+							padding: "0 16px",
+							borderBottom: "1px solid #e0e0e0",
 							background: "#fff",
-							borderRadius: 6,
-							padding: "4px 12px",
-							fontSize: 13,
-							cursor: "pointer",
+							gap: 12,
 						}}
 					>
-						← 返回会话
-					</button>
-					<span style={{ fontSize: 14, fontWeight: 600 }}>
-						Compose Studio
-					</span>
+						<button
+							onClick={onClose}
+							style={{
+								border: "1px solid #d0d0d0",
+								background: "#fff",
+								borderRadius: 6,
+								padding: "4px 12px",
+								fontSize: 13,
+								cursor: "pointer",
+							}}
+						>
+							← 返回会话
+						</button>
+						<span style={{ fontSize: 14, fontWeight: 600 }}>
+							Compose Studio
+						</span>
+					</div>
+					<Canvas state={state} dispatch={dispatch} />
 				</div>
-				<Canvas state={state} dispatch={dispatch} />
+				{/* 右：属性面板 */}
+				<div
+					style={{
+						width: 320,
+						flexShrink: 0,
+						borderLeft: "1px solid #e0e0e0",
+						background: "#fff",
+						overflow: "auto",
+					}}
+				>
+					<Inspector state={state} dispatch={dispatch} />
+				</div>
 			</div>
-			{/* 右：属性面板 */}
-			<div
-				style={{
-					width: 320,
-					flexShrink: 0,
-					borderLeft: "1px solid #e0e0e0",
-					background: "#fff",
-					overflow: "auto",
-				}}
-			>
-				<Inspector state={state} dispatch={dispatch} />
-			</div>
+			{/* 底部：AI 聊天调整（Phase 3 LLM） */}
+			<ChatPanel />
 		</div>
 	);
 }
