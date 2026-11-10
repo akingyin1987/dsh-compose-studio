@@ -202,19 +202,25 @@
 **Description:** 实现 palette → canvas 拖放（落点计算：命中容器 + index）→ `node/add` + `node/move`；节点拖拽重排；删除父节点级联子树；全部操作可 undo/redo。
 
 **Acceptance criteria:**
-- [ ] 拖放位置正确（容器内 index 计算准确）
-- [ ] 节点移动/重排正确
-- [ ] 删除父节点级联删除子树
-- [ ] 所有操作可 undo/redo
+- [x] 拖放位置正确（容器内 index 计算准确）
+- [x] 节点移动/重排正确（含拖入自身/子孙的环形防护）
+- [x] 删除父节点级联删除子树（Delete 键 + Inspector 删除按钮入口）
+- [x] 所有操作可 undo/redo（Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y + 顶栏按钮）
 
 **Verification:**
-- [ ] Tests pass: `npm test`（reducer 层面）
-- [ ] Manual check: 拖拽添加、移动、删除
+- [x] Tests pass: `npm test`（reducer 层面 + drag 纯函数 24 个；共 72 passed）
+- [x] typecheck / build 全绿
+- [ ] Manual check: 拖拽添加、移动、删除、undo/redo（待 DSH 环境手动验证）
 
 **Dependencies:** Task 6、Task 7
 
 **Files likely touched:**
-- `src/client/canvas/drag.ts`
+- `src/client/canvas/drag.ts`（新增：落点计算 / 容器解析 / 默认节点创建 / 环形防护）
+- `src/client/canvas/Canvas.tsx`（拖放监听 + 落点指示条 + 新建/移动 dispatch）
+- `src/client/canvas/PreviewRenderer.tsx`（data-node-id / draggable / 指示条渲染）
+- `src/client/palette/ComponentPalette.tsx`（DND_MIME 单一来源）
+- `src/client/inspector/Inspector.tsx`（删除按钮）
+- `src/client/index.tsx`（Delete/undo/redo 快捷键 + 顶栏按钮）
 
 **Estimated scope:** Large（建议按 9a 拖放落点 / 9b 重排与级联删除执行）
 
@@ -396,9 +402,10 @@
 - [ ] 插件在 DSH 中可安装、面板可打开
 
 ### Checkpoint CP3（T6-T9 后）：可视化编排闭环
-- [ ] 可通过拖拽编排组件（React 占位渲染）
-- [ ] 属性面板实时联动
-- [ ] undo/redo 可用
+- [x] 可通过拖拽编排组件（React 占位渲染）
+- [x] 属性面板实时联动
+- [x] undo/redo 可用
+- ⚠️ 待 DSH 环境手动演示验证（各任务 Manual check 未完成）
 
 ### Checkpoint CP4（T10-T11 后）：高保真预览
 - [ ] 真实 M3 渲染替换占位

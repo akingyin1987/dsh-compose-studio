@@ -1,7 +1,7 @@
 // dsh-compose-studio —— 客户端入口
 // DSH 0.2.2：注册到 main slot（主面板，panel 系统），
 // 通过 ctx.layout.selectPanel(id) 切换（null = 会话）。
-import React, { useReducer } from "react";
+import React, { useEffect, useReducer } from "react";
 import type { ClientContext } from "@deepseek-ai/dsh-client-runtime/client";
 import { reducer, createInitialState } from "./store.js";
 import { ComponentPalette } from "./palette/ComponentPalette.js";
@@ -47,6 +47,42 @@ const PANEL_ID = "composeStudio";
 // --- 三栏面板（内嵌主面板，带"返回会话"按钮） ---
 function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 	const [state, dispatch] = useReducer(reducer, null, createInitialState);
+
+	// 快捷键：Delete/Backspace 删除选中节点；Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y 撤销重做
+	useEffect(() => {
+		const onKeyDown = (e: KeyboardEvent): void => {
+			const target = e.target as HTMLElement | null;
+			if (
+				target &&
+				(target.tagName === "INPUT" ||
+					target.tagName === "TEXTAREA" ||
+					target.isContentEditable)
+			) {
+				return;
+			}
+			const selectedId = state.selection.anchorId;
+			if (
+				(e.key === "Delete" || e.key === "Backspace") &&
+				selectedId &&
+				selectedId !== state.document.root.id
+			) {
+				e.preventDefault();
+				dispatch({ type: "node/remove", id: selectedId });
+				return;
+			}
+			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "z") {
+				e.preventDefault();
+				dispatch({ type: e.shiftKey ? "history/redo" : "history/undo" });
+				return;
+			}
+			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "y") {
+				e.preventDefault();
+				dispatch({ type: "history/redo" });
+			}
+		};
+		window.addEventListener("keydown", onKeyDown);
+		return () => window.removeEventListener("keydown", onKeyDown);
+	}, [state.selection.anchorId, state.document.root.id]);
 
 	return (
 		<div
@@ -100,6 +136,45 @@ function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 						<span style={{ fontSize: 14, fontWeight: 600 }}>
 							Compose Studio
 						</span>
+						{/* 撤销 / 重做 */}
+						<div style={{ marginLeft: "auto", display: "flex", gap: UI.space.sm }}>
+							<button
+								onClick={() => dispatch({ type: "history/undo" })}
+								disabled={state.history.undo.length === 0}
+								title="撤销（Ctrl+Z）"
+								style={{
+									border: `1px solid ${UI.border}`,
+									background: UI.surfaceAlt,
+									color: state.history.undo.length === 0 ? UI.textFaint : UI.text,
+									borderRadius: UI.radius.md,
+									padding: `${UI.space.xs}px ${UI.space.sm}px`,
+									fontSize: 13,
+									cursor: state.history.undo.length === 0 ? "default" : "pointer",
+									fontFamily: UI.fontSans,
+									opacity: state.history.undo.length === 0 ? 0.5 : 1,
+								}}
+							>
+								↶ 撤销
+							</button>
+							<button
+								onClick={() => dispatch({ type: "history/redo" })}
+								disabled={state.history.redo.length === 0}
+								title="重做（Ctrl+Shift+Z）"
+								style={{
+									border: `1px solid ${UI.border}`,
+									background: UI.surfaceAlt,
+									color: state.history.redo.length === 0 ? UI.textFaint : UI.text,
+									borderRadius: UI.radius.md,
+									padding: `${UI.space.xs}px ${UI.space.sm}px`,
+									fontSize: 13,
+									cursor: state.history.redo.length === 0 ? "default" : "pointer",
+									fontFamily: UI.fontSans,
+									opacity: state.history.redo.length === 0 ? 0.5 : 1,
+								}}
+							>
+								↷ 重做
+							</button>
+						</div>
 					</div>
 					<Canvas state={state} dispatch={dispatch} />
 				</div>

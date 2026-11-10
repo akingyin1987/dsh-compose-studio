@@ -5,10 +5,11 @@ import {
 	searchDescriptors,
 	type ComponentDescriptor,
 } from "./catalog.js";
+import { DND_MIME } from "../canvas/drag.js";
 import { UI } from "../theme/ui.js";
 
-/** 拖拽数据类型（canvas 监听此 MIME）。 */
-export const DND_MIME = "application/x-compose-studio";
+/** 拖拽数据类型（canvas 监听此 MIME；定义在 drag.ts，单一来源）。 */
+export { DND_MIME };
 
 function DescriptorItem({ descriptor }: { descriptor: ComponentDescriptor }) {
 	return (

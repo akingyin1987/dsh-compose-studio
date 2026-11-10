@@ -49,19 +49,19 @@
 ## 4. 任务列表（概览）
 
 ### Phase 0 收尾
-- [ ] T1: 插件内 Compose Web 互操作验证（spike 验证页：React overlay + 事件桥）
-- [ ] T2: 客户端包体积与加载策略验证
+- [x] T1: 插件内 Compose Web 互操作验证（spike 验证页：React overlay + 事件桥）
+- [x] T2: 客户端包体积与加载策略验证
 
 ### Phase 1-A：工具链与契约
-- [ ] T3: TypeScript 构建与测试工具链（src/ → lib/）
-- [ ] T4: shared 契约层（contract/document/theme/device/validate）
+- [x] T3: TypeScript 构建与测试工具链（src/ → lib/）
+- [x] T4: shared 契约层（contract/document/theme/device/validate）
 
 ### Phase 1-B：客户端核心
-- [ ] T5: 客户端 store + reducer + 历史栈
-- [ ] T6: ComponentCatalog + Palette
-- [ ] T7: Canvas 与节点渲染（React 占位）
-- [ ] T8: Inspector 属性面板
-- [ ] T9: 拖拽编排
+- [x] T5: 客户端 store + reducer + 历史栈
+- [x] T6: ComponentCatalog + Palette
+- [x] T7: Canvas 与节点渲染（React 占位）
+- [x] T8: Inspector 属性面板
+- [x] T9: 拖拽编排
 
 ### Phase 1-C：预览 runtime
 - [ ] T10: preview-runtime 包（Kotlin/JS，renderPreview）

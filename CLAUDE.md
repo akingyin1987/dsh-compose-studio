@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **dsh-compose-studio** 是 DSH（DeepSeek Harness，基于 Cordis 的插件化 Agent Harness）的客户端插件，在 DSH 界面内提供 Android Jetpack Compose 可视化拖拽编辑器（组件树 / 画布 / 属性面板三栏），支持 Material 3 主题配置与 LLM 辅助代码生成。
 
-当前处于 **Phase 0 已完成、Phase 1 工具链就绪** 阶段（T3 完成）：插件骨架、Compose Web 工具链验证、TS 构建/测试设施均已落地，可视化编辑功能（Phase 1）尚未实现。路线图见 `tasks/plan.md`，任务状态见 `tasks/todo.md`。
+当前处于 **Phase 1-B 进行中** 阶段（T9 完成）：插件骨架、TS 工具链、shared 契约层、客户端核心（store / palette / canvas / inspector）与拖拽编排均已落地，三栏编辑器可运行（React 占位渲染）。高保真预览（T10/T11）、代码生成（T12-T14）、持久化与 RPC（T15/T16）待实现。路线图见 `tasks/plan.md`，任务状态见 `tasks/todo.md`。
 
 ## 常用命令
 

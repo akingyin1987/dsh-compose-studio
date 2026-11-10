@@ -2,6 +2,7 @@
 // Phase 1 先用 React 模拟 Compose 外观；T10/T11 替换为 Compose Web 真实渲染。
 import React from "react";
 import type { RenderNode } from "./Canvas.js";
+import { DND_MIME, axisOf, type DropTarget } from "./drag.js";
 
 // ===== M3 样式常量（近似 Material 3 基线风格） =====
 
@@ -74,14 +75,36 @@ const M3 = {
 	},
 };
 
+/** 落点指示条（垂直容器用水平线，水平容器用垂直线）。 */
+function indicatorStyle(nodeType: string): React.CSSProperties {
+	const axis = axisOf(nodeType);
+	return axis === "vertical"
+		? {
+				height: 2,
+				width: "100%",
+				background: "#1976d2",
+				borderRadius: 1,
+				flexShrink: 0,
+		  }
+		: {
+				width: 2,
+				alignSelf: "stretch",
+				background: "#1976d2",
+				borderRadius: 1,
+				flexShrink: 0,
+		  };
+}
+
 // ===== 预览节点 =====
 
 export function PreviewNode({
 	node,
 	onSelect,
+	dropIndicator,
 }: {
 	node: RenderNode;
 	onSelect: (id: string) => void;
+	dropIndicator?: DropTarget | null;
 }) {
 	const isRoot = node.depth === 0;
 	const selected = node.selected;
@@ -94,54 +117,130 @@ export function PreviewNode({
 		position: "relative",
 	};
 
+	// 节点属性（data-node-id 供拖放命中；容器标记 data-container）
+	const nodeAttrs = {
+		"data-node-id": node.id,
+		...(node.isContainer ? { "data-container": "1" } : {}),
+	} as React.HTMLAttributes<HTMLElement>;
+	const draggable = !isRoot;
+	const dragProps = (draggable
+		? {
+				draggable: true,
+				onDragStart: (e: React.DragEvent) => {
+					e.stopPropagation();
+					e.dataTransfer.setData(DND_MIME, node.id);
+					e.dataTransfer.effectAllowed = "move";
+				},
+		  }
+		: {}) as React.HTMLAttributes<HTMLElement>;
+
 	const handleClick = (e: React.MouseEvent): void => {
 		e.stopPropagation();
 		onSelect(node.id);
 	};
 
-	// 渲染子节点
-	const children =
-		node.children.length > 0
-			? node.children.map((child) => (
-					<PreviewNode key={child.id} node={child} onSelect={onSelect} />
-				))
-			: null;
+	// 渲染子节点（含落点指示条）
+	const showIndicator =
+		dropIndicator != null && dropIndicator.parentId === node.id;
+	const renderChildren = (): React.ReactNode => {
+		const items: React.ReactNode[] = [];
+		node.children.forEach((child, i) => {
+			if (showIndicator && dropIndicator.index === i) {
+				items.push(
+					<div key={`ind-${i}`} style={indicatorStyle(node.type)} />,
+				);
+			}
+			items.push(
+				<PreviewNode
+					key={child.id}
+					node={child}
+					onSelect={onSelect}
+					dropIndicator={dropIndicator}
+				/>,
+			);
+		});
+		if (showIndicator && dropIndicator.index === node.children.length) {
+			items.push(<div key="ind-end" style={indicatorStyle(node.type)} />);
+		}
+		return items;
+	};
 
 	// 按组件类型渲染（M3 风格）
 	switch (node.type) {
 		case "layout.Column":
 			return (
-				<div style={{ ...wrapperStyle, display: "flex", flexDirection: "column", gap: Number(node.props.spacing ?? 8) }} onClick={handleClick}>
-					{children}
+				<div
+					{...nodeAttrs}
+					{...dragProps}
+					style={{
+						...wrapperStyle,
+						display: "flex",
+						flexDirection: "column",
+						gap: Number(node.props.spacing ?? 8),
+					}}
+					onClick={handleClick}
+				>
+					{renderChildren()}
 				</div>
 			);
 		case "layout.Row":
 			return (
-				<div style={{ ...wrapperStyle, display: "flex", gap: Number(node.props.spacing ?? 8), alignItems: "center" }} onClick={handleClick}>
-					{children}
+				<div
+					{...nodeAttrs}
+					{...dragProps}
+					style={{
+						...wrapperStyle,
+						display: "flex",
+						gap: Number(node.props.spacing ?? 8),
+						alignItems: "center",
+					}}
+					onClick={handleClick}
+				>
+					{renderChildren()}
 				</div>
 			);
 		case "layout.Box":
 			return (
-				<div style={wrapperStyle} onClick={handleClick}>
-					{children}
+				<div {...nodeAttrs} {...dragProps} style={wrapperStyle} onClick={handleClick}>
+					{renderChildren()}
 				</div>
 			);
 		case "m3.Text":
 			return (
-				<div style={{ ...wrapperStyle, ...M3.text(Number(node.props.fontSize ?? 14), Number(node.props.fontWeight ?? 400)) }} onClick={handleClick}>
+				<div
+					{...nodeAttrs}
+					{...dragProps}
+					style={{
+						...wrapperStyle,
+						...M3.text(
+							Number(node.props.fontSize ?? 14),
+							Number(node.props.fontWeight ?? 400),
+						),
+					}}
+					onClick={handleClick}
+				>
 					{String(node.props.text ?? node.text ?? "Text")}
 				</div>
 			);
 		case "m3.Button":
 			return (
-				<button style={{ ...wrapperStyle, ...M3.button }} onClick={(e) => { e.stopPropagation(); onSelect(node.id); }}>
-					{children ?? String(node.props.text ?? "Button")}
+				<button
+					{...nodeAttrs}
+					{...dragProps}
+					style={{ ...wrapperStyle, ...M3.button }}
+					onClick={(e) => {
+						e.stopPropagation();
+						onSelect(node.id);
+					}}
+				>
+					{node.children.length > 0
+						? renderChildren()
+						: String(node.props.text ?? "Button")}
 				</button>
 			);
 		case "m3.TextField":
 			return (
-				<div style={wrapperStyle} onClick={handleClick}>
+				<div {...nodeAttrs} {...dragProps} style={wrapperStyle} onClick={handleClick}>
 					<input
 						style={M3.textField}
 						placeholder={String(node.props.label ?? "TextField")}
@@ -151,19 +250,34 @@ export function PreviewNode({
 			);
 		case "m3.Card":
 			return (
-				<div style={{ ...wrapperStyle, ...M3.card }} onClick={handleClick}>
-					{children}
+				<div
+					{...nodeAttrs}
+					{...dragProps}
+					style={{ ...wrapperStyle, ...M3.card }}
+					onClick={handleClick}
+				>
+					{renderChildren()}
 				</div>
 			);
 		case "m3.Scaffold":
 			return (
-				<div style={{ ...wrapperStyle, ...M3.scaffold }} onClick={handleClick}>
-					{children}
+				<div
+					{...nodeAttrs}
+					{...dragProps}
+					style={{ ...wrapperStyle, ...M3.scaffold }}
+					onClick={handleClick}
+				>
+					{renderChildren()}
 				</div>
 			);
 		case "m3.TopAppBar":
 			return (
-				<div style={{ ...wrapperStyle, ...M3.topBar }} onClick={handleClick}>
+				<div
+					{...nodeAttrs}
+					{...dragProps}
+					style={{ ...wrapperStyle, ...M3.topBar }}
+					onClick={handleClick}
+				>
 					{String(node.props.title ?? "Title")}
 				</div>
 			);
@@ -171,20 +285,37 @@ export function PreviewNode({
 			const w = Number(node.props.width ?? 100);
 			const h = Number(node.props.height ?? 100);
 			return (
-				<div style={{ ...wrapperStyle, ...M3.image, width: w, height: h }} onClick={handleClick}>
+				<div
+					{...nodeAttrs}
+					{...dragProps}
+					style={{ ...wrapperStyle, ...M3.image, width: w, height: h }}
+					onClick={handleClick}
+				>
 					Image
 				</div>
 			);
 		}
 		case "content.Icon":
 			return (
-				<span style={{ ...wrapperStyle, ...M3.icon }} onClick={handleClick}>
-					{String(node.props.name ?? "star") === "star" ? "★" : String(node.props.name ?? "★")}
+				<span
+					{...nodeAttrs}
+					{...dragProps}
+					style={{ ...wrapperStyle, ...M3.icon }}
+					onClick={handleClick}
+				>
+					{String(node.props.name ?? "star}") === "star"
+						? "★"
+						: String(node.props.name ?? "★")}
 				</span>
 			);
 		default:
 			return (
-				<div style={{ ...wrapperStyle, padding: 4, color: "#888", fontSize: 12 }} onClick={handleClick}>
+				<div
+					{...nodeAttrs}
+					{...dragProps}
+					style={{ ...wrapperStyle, padding: 4, color: "#888", fontSize: 12 }}
+					onClick={handleClick}
+				>
 					{node.type}
 				</div>
 			);

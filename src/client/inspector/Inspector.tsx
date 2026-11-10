@@ -237,9 +237,15 @@ export function Inspector({
 
 	const descriptor = findDescriptor(node.type);
 	const propSchemas = descriptor?.defaultProps ?? [];
+	const isRoot = node.id === document.root.id;
 
 	const handleChange = (key: string, value: unknown): void => {
 		dispatch({ type: "node/updateProps", id: node.id, patch: { [key]: value } });
+	};
+
+	const handleDelete = (): void => {
+		if (isRoot) return;
+		dispatch({ type: "node/remove", id: node.id });
 	};
 
 	return (
@@ -270,6 +276,25 @@ export function Inspector({
 						onChange={(v) => handleChange(schema.key, v)}
 					/>
 				))
+			)}
+			{!isRoot && (
+				<button
+					onClick={handleDelete}
+					style={{
+						width: "100%",
+						marginTop: UI.space.lg,
+						padding: `${UI.space.sm}px ${UI.space.md}px`,
+						border: `1px solid ${UI.destructive}`,
+						borderRadius: UI.radius.md,
+						background: "transparent",
+						color: UI.destructive,
+						fontSize: 13,
+						cursor: "pointer",
+						fontFamily: UI.fontSans,
+					}}
+				>
+					删除节点
+				</button>
 			)}
 		</div>
 	);
