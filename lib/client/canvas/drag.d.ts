@@ -33,6 +33,14 @@ export declare function resolveContainerId(doc: CanvasDocument, hitId: string | 
 export declare function resolveDropTarget(doc: CanvasDocument, hitId: string | null, axis: Axis, childGeometries: ChildGeometry[], x: number, y: number): DropTarget | null;
 /** 判断 id 是否在 subtreeRootId 的子树中（含自身）；用于禁止把容器拖入自身/子孙。 */
 export declare function isInSubtree(doc: CanvasDocument, id: string, subtreeRootId: string): boolean;
+/** 从节点 props 读取修饰符样式（宽/高/内边距/背景色，纯函数）。
+ * key 带 modifier 前缀，避免与组件自身属性（如 Image 的 width）冲突。 */
+export declare function getModifierStyle(props: Record<string, unknown>): {
+    width?: number;
+    height?: number;
+    padding?: number;
+    background?: string;
+};
 /** 由 descriptor 创建默认节点（id 在 takenIds 中唯一，按序号递增）。 */
 export declare function createNodeFromDescriptor(descriptor: ComponentDescriptor, takenIds: Set<string>): Node;
 //# sourceMappingURL=drag.d.ts.map

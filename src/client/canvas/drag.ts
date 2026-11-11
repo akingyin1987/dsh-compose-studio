@@ -113,6 +113,27 @@ export function isInSubtree(
 	return walk(root);
 }
 
+/** 从节点 props 读取修饰符样式（宽/高/内边距/背景色，纯函数）。
+ * key 带 modifier 前缀，避免与组件自身属性（如 Image 的 width）冲突。 */
+export function getModifierStyle(
+	props: Record<string, unknown>,
+): {
+	width?: number;
+	height?: number;
+	padding?: number;
+	background?: string;
+} {
+	return {
+		width: props.modifierWidth != null ? Number(props.modifierWidth) : undefined,
+		height: props.modifierHeight != null ? Number(props.modifierHeight) : undefined,
+		padding: props.modifierPadding != null ? Number(props.modifierPadding) : undefined,
+		background:
+			typeof props.modifierBackground === "string"
+				? props.modifierBackground
+				: undefined,
+	};
+}
+
 /** 由 descriptor 创建默认节点（id 在 takenIds 中唯一，按序号递增）。 */
 export function createNodeFromDescriptor(
 	descriptor: ComponentDescriptor,

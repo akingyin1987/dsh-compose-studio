@@ -226,6 +226,32 @@
 
 ---
 
+### Task 9b: Modifier 修饰符参数面板
+
+**Description:** Inspector 为选中节点增加通用修饰符区域（宽/高/内边距/背景色），值存于 `node.props.modifier*`（前缀避免与组件自身属性冲突）；PreviewRenderer 将修饰符样式应用到所有组件渲染。
+
+**Acceptance criteria:**
+- [x] Inspector 显示"修饰符"区域：宽 (dp) / 高 (dp) / 内边距 (dp) / 背景色（含清除）
+- [x] 属性编辑实时反映到画布（node/updateProps → PreviewRenderer 应用）
+- [x] `getModifierStyle` 纯函数单测（含与 Image 自身 width 不冲突用例）
+- [x] typecheck / `npm test`（74 passed）/ build 全绿
+
+**Verification:**
+- [x] Tests pass: `npm test`
+- [ ] Manual check: 选中节点 → 修改宽/高/内边距/背景色 → 画布实时变化
+
+**Dependencies:** Task 8（Inspector）
+
+**Files likely touched:**
+- `src/client/inspector/Inspector.tsx`（ModifierSection + MODIFIER_FIELDS）
+- `src/client/canvas/drag.ts`（getModifierStyle 纯函数）
+- `src/client/canvas/PreviewRenderer.tsx`（各 case 应用修饰符样式）
+- `src/client/canvas/test/drag.test.ts`（+2 测试）
+
+**Estimated scope:** Small
+
+---
+
 ## Phase 1-C：预览 runtime
 
 ### Task 10: preview-runtime 包

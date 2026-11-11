@@ -188,6 +188,100 @@ export function PropField({
 	}
 }
 
+// ===== 通用修饰符（Modifier） =====
+
+/** 通用 Modifier 字段（所有组件可用；存于 node.props，modifier 前缀避免冲突）。 */
+export const MODIFIER_FIELDS = [
+	{ key: "modifierWidth", label: "宽 (dp)", kind: "dp" },
+	{ key: "modifierHeight", label: "高 (dp)", kind: "dp" },
+	{ key: "modifierPadding", label: "内边距 (dp)", kind: "dp" },
+	{ key: "modifierBackground", label: "背景色", kind: "color" },
+] as const;
+
+/** 从 props 读取修饰符样式（纯函数，可测试）。 */
+export { getModifierStyle } from "../canvas/drag.js";
+
+function ModifierSection({
+	node,
+	dispatch,
+}: {
+	node: import("../../shared/document.js").Node;
+	dispatch: (action: Action) => void;
+}) {
+	const props = node.props;
+	const setProp = (key: string, value: unknown): void => {
+		dispatch({ type: "node/updateProps", id: node.id, patch: { [key]: value } });
+	};
+	// 读取修饰符值（number 或 string；未设置返回空串）
+	const modifierValue = (key: string): number | string => {
+		const v = props[key];
+		return typeof v === "number" ? v : typeof v === "string" ? v : "";
+	};
+
+	return (
+		<div style={{ marginBottom: UI.space.md }}>
+			<div
+				style={{
+					fontSize: 12,
+					fontWeight: 600,
+					color: UI.textMuted,
+					marginBottom: UI.space.sm,
+					paddingTop: UI.space.sm,
+					borderTop: `1px solid ${UI.border}`,
+				}}
+			>
+				修饰符
+			</div>
+			{MODIFIER_FIELDS.map((field) => (
+				<FieldRow key={field.key} label={field.label}>
+					{field.kind === "dp" ? (
+						<input
+							type="number"
+							style={{ ...inputStyle, width: 90 }}
+							value={modifierValue(field.key)}
+							placeholder="auto"
+							onChange={(e) => {
+								const raw = e.target.value;
+								setProp(field.key, raw === "" ? undefined : Number(raw));
+							}}
+						/>
+					) : (
+						<div style={{ display: "flex", gap: UI.space.sm, alignItems: "center" }}>
+							<input
+								type="color"
+								style={{
+									width: 36,
+									height: 28,
+									padding: 0,
+									border: `1px solid ${UI.border}`,
+								}}
+								value={modifierValue(field.key) || "#ffffff"}
+								onChange={(e) => setProp(field.key, e.target.value)}
+							/>
+							<button
+								onClick={() => setProp(field.key, undefined)}
+								title="清除背景"
+								style={{
+									border: `1px solid ${UI.border}`,
+									background: "transparent",
+									color: UI.textMuted,
+									borderRadius: UI.radius.sm,
+									fontSize: 11,
+									padding: "2px 8px",
+									cursor: "pointer",
+									fontFamily: UI.fontSans,
+								}}
+							>
+								清除
+							</button>
+						</div>
+					)}
+				</FieldRow>
+			))}
+		</div>
+	);
+}
+
 // ===== 纯函数（可测试） =====
 
 export function getSelectedNode(
@@ -277,6 +371,7 @@ export function Inspector({
 					/>
 				))
 			)}
+			<ModifierSection node={node} dispatch={dispatch} />
 			{!isRoot && (
 				<button
 					onClick={handleDelete}

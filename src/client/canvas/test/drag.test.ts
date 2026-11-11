@@ -4,6 +4,7 @@ import {
 	computeInsertIndex,
 	createNodeFromDescriptor,
 	findParentId,
+	getModifierStyle,
 	isInSubtree,
 	resolveContainerId,
 	resolveDropTarget,
@@ -141,6 +142,32 @@ describe("isInSubtree", () => {
 	it("非后代不在子树中", () => {
 		expect(isInSubtree(makeDoc(), "root", "col")).toBe(false);
 		expect(isInSubtree(makeDoc(), "col", "t1")).toBe(false);
+	});
+});
+
+describe("getModifierStyle", () => {
+	it("未设置时返回 undefined", () => {
+		expect(getModifierStyle({})).toEqual({
+			width: undefined,
+			height: undefined,
+			padding: undefined,
+			background: undefined,
+		});
+	});
+	it("读取 modifier* 字段（与组件自身 width 不冲突）", () => {
+		const style = getModifierStyle({
+			modifierWidth: 100,
+			modifierHeight: 50,
+			modifierPadding: 12,
+			modifierBackground: "#FF0000",
+			width: 80, // Image 自身属性，不影响修饰符
+		});
+		expect(style).toEqual({
+			width: 100,
+			height: 50,
+			padding: 12,
+			background: "#FF0000",
+		});
 	});
 });
 

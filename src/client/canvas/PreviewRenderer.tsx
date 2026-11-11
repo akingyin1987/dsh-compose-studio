@@ -2,7 +2,7 @@
 // Phase 1 先用 React 模拟 Compose 外观；T10/T11 替换为 Compose Web 真实渲染。
 import React from "react";
 import type { RenderNode } from "./Canvas.js";
-import { DND_MIME, axisOf, type DropTarget } from "./drag.js";
+import { DND_MIME, axisOf, getModifierStyle, type DropTarget } from "./drag.js";
 import { studioDebug } from "../debug.js";
 
 // ===== M3 样式常量（近似 Material 3 基线风格） =====
@@ -118,6 +118,9 @@ export function PreviewNode({
 		position: "relative",
 	};
 
+	// 修饰符样式（宽/高/内边距/背景色）
+	const modStyle = getModifierStyle(node.props);
+
 	// 节点属性（data-node-id 供拖放命中；容器标记 data-container）
 	const nodeAttrs = {
 		"data-node-id": node.id,
@@ -176,6 +179,7 @@ export function PreviewNode({
 					{...dragProps}
 					style={{
 						...wrapperStyle,
+						...modStyle,
 						display: "flex",
 						flexDirection: "column",
 						gap: Number(node.props.spacing ?? 8),
@@ -192,6 +196,7 @@ export function PreviewNode({
 					{...dragProps}
 					style={{
 						...wrapperStyle,
+						...modStyle,
 						display: "flex",
 						gap: Number(node.props.spacing ?? 8),
 						alignItems: "center",
@@ -203,7 +208,12 @@ export function PreviewNode({
 			);
 		case "layout.Box":
 			return (
-				<div {...nodeAttrs} {...dragProps} style={wrapperStyle} onClick={handleClick}>
+				<div
+					{...nodeAttrs}
+					{...dragProps}
+					style={{ ...wrapperStyle, ...modStyle }}
+					onClick={handleClick}
+				>
 					{renderChildren()}
 				</div>
 			);
@@ -214,6 +224,7 @@ export function PreviewNode({
 					{...dragProps}
 					style={{
 						...wrapperStyle,
+						...modStyle,
 						...M3.text(
 							Number(node.props.fontSize ?? 14),
 							Number(node.props.fontWeight ?? 400),
@@ -229,7 +240,7 @@ export function PreviewNode({
 				<button
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, ...M3.button }}
+					style={{ ...wrapperStyle, ...modStyle, ...M3.button }}
 					onClick={(e) => {
 						e.stopPropagation();
 						onSelect(node.id);
@@ -242,7 +253,12 @@ export function PreviewNode({
 			);
 		case "m3.TextField":
 			return (
-				<div {...nodeAttrs} {...dragProps} style={wrapperStyle} onClick={handleClick}>
+				<div
+					{...nodeAttrs}
+					{...dragProps}
+					style={{ ...wrapperStyle, ...modStyle }}
+					onClick={handleClick}
+				>
 					<input
 						style={M3.textField}
 						placeholder={String(node.props.label ?? "TextField")}
@@ -255,7 +271,7 @@ export function PreviewNode({
 				<div
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, ...M3.card }}
+					style={{ ...wrapperStyle, ...modStyle, ...M3.card }}
 					onClick={handleClick}
 				>
 					{renderChildren()}
@@ -266,7 +282,7 @@ export function PreviewNode({
 				<div
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, ...M3.scaffold }}
+					style={{ ...wrapperStyle, ...modStyle, ...M3.scaffold }}
 					onClick={handleClick}
 				>
 					{renderChildren()}
@@ -277,7 +293,7 @@ export function PreviewNode({
 				<div
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, ...M3.topBar }}
+					style={{ ...wrapperStyle, ...modStyle, ...M3.topBar }}
 					onClick={handleClick}
 				>
 					{String(node.props.title ?? "Title")}
@@ -290,7 +306,7 @@ export function PreviewNode({
 				<div
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, ...M3.image, width: w, height: h }}
+					style={{ ...wrapperStyle, ...modStyle, ...M3.image, width: w, height: h }}
 					onClick={handleClick}
 				>
 					Image
@@ -302,7 +318,7 @@ export function PreviewNode({
 				<span
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, ...M3.icon }}
+					style={{ ...wrapperStyle, ...modStyle, ...M3.icon }}
 					onClick={handleClick}
 				>
 					{String(node.props.name ?? "star}") === "star"
@@ -315,7 +331,7 @@ export function PreviewNode({
 				<div
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, padding: 4, color: "#888", fontSize: 12 }}
+					style={{ ...wrapperStyle, ...modStyle, padding: 4, color: "#888", fontSize: 12 }}
 					onClick={handleClick}
 				>
 					{node.type}

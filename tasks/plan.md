@@ -62,6 +62,7 @@
 - [x] T7: Canvas 与节点渲染（React 占位）
 - [x] T8: Inspector 属性面板
 - [x] T9: 拖拽编排
+- [x] T9b: Modifier 修饰符参数面板（宽/高/内边距/背景色）
 
 ### Phase 1-C：预览 runtime
 - [ ] T10: preview-runtime 包（Kotlin/JS，renderPreview）
