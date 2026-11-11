@@ -23,6 +23,8 @@ export interface StudioState {
         leftWidth: number;
         rightWidth: number;
         inspectorTab: "props" | "theme";
+        /** 显示容器边界虚线（默认开启）。 */
+        showBorders: boolean;
     };
 }
 export interface ClipboardPayload {
@@ -109,6 +111,9 @@ export type Action = {
 } | {
     type: "doc/rename";
     name: string;
+    ts?: number;
+} | {
+    type: "ui/toggleBorders";
     ts?: number;
 };
 /** 创建初始状态（含示例文档：Scaffold > Column > [Text, Button]）。 */

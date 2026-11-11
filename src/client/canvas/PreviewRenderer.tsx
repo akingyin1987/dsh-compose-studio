@@ -15,19 +15,67 @@ const M3 = {
 		color: "#1C1B1F",
 		lineHeight: 1.4,
 	}),
-	button: (variant: string = "filled"): React.CSSProperties => ({
-		background: variant === "filled" ? "#6750A4" : variant === "tonal" ? "#E8DEF8" : variant === "elevated" ? "#F7F2FA" : "transparent",
-		color: variant === "filled" ? "#FFFFFF" : "#6750A4",
-		borderRadius: 20,
-		padding: variant === "text" ? "4px 12px" : "8px 20px",
-		fontSize: 14,
-		fontWeight: 500,
-		border: variant === "outlined" ? "1px solid #79747E" : "none",
-		cursor: "pointer",
-		display: "inline-flex",
-		alignItems: "center",
-		gap: 6,
-	}),
+	button: (variant: string = "filled"): React.CSSProperties => {
+		const base: React.CSSProperties = {
+			borderRadius: 20,
+			height: 40,
+			padding: "0 24px",
+			fontSize: 14,
+			fontWeight: 500,
+			cursor: "pointer",
+			display: "inline-flex",
+			alignItems: "center",
+			justifyContent: "center",
+			gap: 8,
+			border: "none",
+			fontFamily: "inherit",
+			letterSpacing: 0.1,
+		};
+		switch (variant) {
+			// Filled：实心 primary 背景 + onPrimary 文字 + 轻阴影（高强调）
+			case "filled":
+				return {
+					...base,
+					background: "#6750A4",
+					color: "#FFFFFF",
+					boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+				};
+			// Filled tonal：secondaryContainer 背景 + onSecondaryContainer 文字
+			case "tonal":
+				return { ...base, background: "#E8DEF8", color: "#1D192B" };
+			// Elevated：surface 背景 + primary 文字 + 明显阴影
+			case "elevated":
+				return {
+					...base,
+					background: "#F7F2FA",
+					color: "#6750A4",
+					boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+				};
+			// Outlined：透明 + outline 边框 + primary 文字（中等强调）
+			case "outlined":
+				return {
+					...base,
+					background: "transparent",
+					color: "#6750A4",
+					border: "1px solid #79747E",
+				};
+			// Text：透明 + primary 文字（低强调）
+			case "text":
+				return {
+					...base,
+					background: "transparent",
+					color: "#6750A4",
+					padding: "0 12px",
+				};
+			default:
+				return {
+					...base,
+					background: "#6750A4",
+					color: "#FFFFFF",
+					boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
+				};
+		}
+	},
 	card: (variant: string = "filled"): React.CSSProperties => ({
 		borderRadius: 12,
 		border: variant === "outlined" ? "1px solid #79747E" : "1px solid #E7E0EC",
@@ -75,6 +123,7 @@ const M3 = {
 	scaffold: {
 		display: "flex",
 		flexDirection: "column" as const,
+		height: "100%",
 		minHeight: "100%",
 		background: "#FFFBFE",
 	},
@@ -203,12 +252,75 @@ const M3 = {
 	},
 };
 
+/** 排列值 → CSS justifyContent。 */
+function arrangementCss(value: unknown): string {
+	switch (value) {
+		case "top":
+		case "start":
+			return "flex-start";
+		case "center":
+			return "center";
+		case "bottom":
+		case "end":
+			return "flex-end";
+		case "spaceBetween":
+			return "space-between";
+		case "spaceAround":
+			return "space-around";
+		case "spaceEvenly":
+			return "space-evenly";
+		default:
+			return "flex-start";
+	}
+}
+
+/** 对齐值 → CSS alignItems。 */
+function alignmentCss(value: unknown): string {
+	switch (value) {
+		case "start":
+			return "flex-start";
+		case "center":
+			return "center";
+		case "end":
+			return "flex-end";
+		default:
+			return "flex-start";
+	}
+}
+
 /** 落点指示条（垂直容器用水平线，水平容器用垂直线）。 */
 function indicatorStyle(nodeType: string): React.CSSProperties {
 	const axis = axisOf(nodeType);
 	return axis === "vertical"
 		? { height: 2, width: "100%", background: "#1976d2", borderRadius: 1, flexShrink: 0 }
 		: { width: 2, alignSelf: "stretch", background: "#1976d2", borderRadius: 1, flexShrink: 0 };
+}
+
+/** 空容器占位提示样式。 */
+const containerPlaceholder: React.CSSProperties = {
+	border: "1px dashed #CAC4D0",
+	borderRadius: 4,
+	padding: "12px 16px",
+	color: "#79747E",
+	fontSize: 12,
+	textAlign: "center",
+	width: "100%",
+	boxSizing: "border-box",
+};
+
+/** 容器最小高度（空容器可见、可拖放）。 */
+const CONTAINER_MIN_HEIGHT = 60;
+
+/** 渲染容器子节点（空时显示占位）。 */
+function renderContainerChildren(
+	node: RenderNode,
+	childrenContent: React.ReactNode,
+	label: string,
+): React.ReactNode {
+	if (node.children.length === 0) {
+		return <div style={containerPlaceholder}>{label}</div>;
+	}
+	return childrenContent;
 }
 
 // ===== 按钮变体映射 =====
@@ -228,24 +340,45 @@ const CARD_VARIANTS: Record<string, string> = {
 	"m3.OutlinedCard": "outlined",
 };
 
+/** Button 变体默认文本（官方类型名，便于区分）。 */
+const BUTTON_LABELS: Record<string, string> = {
+	"m3.Button": "Filled",
+	"m3.FilledTonalButton": "Tonal",
+	"m3.OutlinedButton": "Outlined",
+	"m3.TextButton": "Text",
+	"m3.ElevatedButton": "Elevated",
+	"m3.SegmentedButton": "Option",
+};
+
 // ===== 预览节点 =====
 
 export function PreviewNode({
 	node,
 	onSelect,
 	dropIndicator,
+	showBorders = true,
 }: {
 	node: RenderNode;
 	onSelect: (id: string) => void;
 	dropIndicator?: DropTarget | null;
+	/** 显示容器边界虚线（默认开启）。 */
+	showBorders?: boolean;
 }) {
 	const isRoot = node.depth === 0;
 	const selected = node.selected;
 	const modStyle = getModifierStyle(node.props);
 
+	// 容器边界：选中实线；否则 showBorders 虚线（-1 offset 内缩，不占布局）
+	const containerOutline =
+		selected || !node.isContainer
+			? undefined
+			: showBorders
+				? "1px dashed rgba(25,118,210,0.55)"
+				: undefined;
+
 	const wrapperStyle: React.CSSProperties = {
-		outline: selected ? "2px solid #1976d2" : undefined,
-		outlineOffset: 1,
+		outline: selected ? "2px solid #1976d2" : containerOutline,
+		outlineOffset: selected ? 1 : -1,
 		cursor: "pointer",
 		position: "relative",
 		...modStyle,
@@ -287,6 +420,7 @@ export function PreviewNode({
 					node={child}
 					onSelect={onSelect}
 					dropIndicator={dropIndicator}
+					showBorders={showBorders}
 				/>,
 			);
 		});
@@ -306,10 +440,18 @@ export function PreviewNode({
 				<div
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, display: "flex", flexDirection: "column", gap: Number(node.props.spacing ?? 8) }}
+					style={{
+						...wrapperStyle,
+						display: "flex",
+						flexDirection: "column",
+						gap: Number(node.props.spacing ?? 8),
+						justifyContent: arrangementCss(node.props.verticalArrangement),
+						alignItems: alignmentCss(node.props.horizontalAlignment),
+						minHeight: CONTAINER_MIN_HEIGHT,
+					}}
 					onClick={handleClick}
 				>
-					{childrenContent}
+					{renderContainerChildren(node, childrenContent, "Column（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.Row":
@@ -317,10 +459,17 @@ export function PreviewNode({
 				<div
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, display: "flex", gap: Number(node.props.spacing ?? 8), alignItems: "center" }}
+					style={{
+						...wrapperStyle,
+						display: "flex",
+						gap: Number(node.props.spacing ?? 8),
+						justifyContent: arrangementCss(node.props.horizontalArrangement),
+						alignItems: alignmentCss(node.props.verticalAlignment) as "flex-start" | "center" | "flex-end",
+						minHeight: CONTAINER_MIN_HEIGHT,
+					}}
 					onClick={handleClick}
 				>
-					{childrenContent}
+					{renderContainerChildren(node, childrenContent, "Row（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.FlowRow":
@@ -328,10 +477,10 @@ export function PreviewNode({
 				<div
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, display: "flex", flexWrap: "wrap", gap: Number(node.props.spacing ?? 8), alignItems: "center" }}
+					style={{ ...wrapperStyle, display: "flex", flexWrap: "wrap", gap: Number(node.props.spacing ?? 8), alignItems: "center", minHeight: CONTAINER_MIN_HEIGHT }}
 					onClick={handleClick}
 				>
-					{childrenContent}
+					{renderContainerChildren(node, childrenContent, "FlowRow（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.FlowColumn":
@@ -339,10 +488,10 @@ export function PreviewNode({
 				<div
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, display: "flex", flexDirection: "column", flexWrap: "wrap", gap: Number(node.props.spacing ?? 8) }}
+					style={{ ...wrapperStyle, display: "flex", flexDirection: "column", flexWrap: "wrap", gap: Number(node.props.spacing ?? 8), minHeight: CONTAINER_MIN_HEIGHT }}
 					onClick={handleClick}
 				>
-					{childrenContent}
+					{renderContainerChildren(node, childrenContent, "FlowColumn（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.LazyColumn":
@@ -350,10 +499,10 @@ export function PreviewNode({
 				<div
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, display: "flex", flexDirection: "column", gap: Number(node.props.spacing ?? 8), overflow: "auto" }}
+					style={{ ...wrapperStyle, display: "flex", flexDirection: "column", gap: Number(node.props.spacing ?? 8), overflow: "auto", minHeight: CONTAINER_MIN_HEIGHT }}
 					onClick={handleClick}
 				>
-					{childrenContent}
+					{renderContainerChildren(node, childrenContent, "LazyColumn（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.LazyRow":
@@ -361,16 +510,21 @@ export function PreviewNode({
 				<div
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, display: "flex", gap: Number(node.props.spacing ?? 8), overflow: "auto" }}
+					style={{ ...wrapperStyle, display: "flex", gap: Number(node.props.spacing ?? 8), overflow: "auto", minHeight: CONTAINER_MIN_HEIGHT }}
 					onClick={handleClick}
 				>
-					{childrenContent}
+					{renderContainerChildren(node, childrenContent, "LazyRow（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.Box":
 			return (
-				<div {...nodeAttrs} {...dragProps} style={wrapperStyle} onClick={handleClick}>
-					{childrenContent}
+				<div
+					{...nodeAttrs}
+					{...dragProps}
+					style={{ ...wrapperStyle, minHeight: CONTAINER_MIN_HEIGHT, position: "relative" }}
+					onClick={handleClick}
+				>
+					{renderContainerChildren(node, childrenContent, "Box（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.Spacer":
@@ -416,7 +570,7 @@ export function PreviewNode({
 					<button
 						{...nodeAttrs}
 						{...dragProps}
-						style={{ ...wrapperStyle, ...M3.button(variant) }}
+						style={{ ...M3.button(variant), ...wrapperStyle }}
 						onClick={(e) => {
 							e.stopPropagation();
 							onSelect(node.id);
@@ -424,7 +578,11 @@ export function PreviewNode({
 					>
 						{node.children.length > 0
 							? childrenContent
-							: String(node.props.label ?? node.props.text ?? "Button")}
+							: String(
+									node.props.text ??
+										BUTTON_LABELS[node.type] ??
+										"Button",
+								)}
 					</button>
 				);
 			}
@@ -465,7 +623,7 @@ export function PreviewNode({
 			case "m3.OutlinedCard": {
 				const variant = CARD_VARIANTS[node.type] ?? "filled";
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.card(variant) }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...M3.card(variant), ...wrapperStyle }} onClick={handleClick}>
 						{childrenContent}
 					</div>
 				);
@@ -657,17 +815,81 @@ export function PreviewNode({
 
 			case "m3.Surface":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.surface, background: String(node.props.color ?? "#F7F2FA") }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...M3.surface, background: String(node.props.color ?? "#F7F2FA"), ...wrapperStyle }} onClick={handleClick}>
 						{childrenContent}
 					</div>
 				);
 
-			case "m3.Scaffold":
-				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.scaffold }} onClick={handleClick}>
-						{childrenContent}
+			case "m3.Scaffold": {
+				// Scaffold 槽位：topBar / content / bottomBar / fab
+				const isTopBar = (n: RenderNode): boolean => n.type === "m3.TopAppBar";
+				const isBottomBar = (n: RenderNode): boolean => n.type === "m3.BottomAppBar";
+				const isFab = (n: RenderNode): boolean =>
+					n.type === "m3.FloatingActionButton" ||
+					n.type === "m3.ExtendedFloatingActionButton";
+				const topBar = node.children.filter(isTopBar);
+				const bottomBar = node.children.filter(isBottomBar);
+				const fab = node.children.filter(isFab);
+				const content = node.children.filter(
+					(n) => !isTopBar(n) && !isBottomBar(n) && !isFab(n),
+				);
+				const slotStyle: React.CSSProperties = {
+					border: "1px dashed #E7E0EC",
+					borderRadius: 4,
+					minHeight: 44,
+					padding: 4,
+				};
+				const renderSlot = (
+					nodes: RenderNode[],
+					label: string,
+				): React.ReactNode => (
+					<div style={slotStyle}>
+						{nodes.length === 0 ? (
+							<div style={containerPlaceholder}>{label}</div>
+						) : (
+							nodes.map((n) => (
+								<PreviewNode
+									key={n.id}
+									node={n}
+									onSelect={onSelect}
+									dropIndicator={dropIndicator}
+								/>
+							))
+						)}
 					</div>
 				);
+				return (
+					<div
+						{...nodeAttrs}
+						{...dragProps}
+						style={{
+							...wrapperStyle,
+							...M3.scaffold,
+							minHeight: "100%",
+							position: "relative",
+						}}
+						onClick={handleClick}
+					>
+						{renderSlot(topBar, "TopAppBar（拖入顶栏）")}
+						<div style={{ flex: 1, display: "flex", flexDirection: "column" }}>
+							{renderSlot(content, "Content（拖拽组件到此处）")}
+						</div>
+						{renderSlot(bottomBar, "BottomAppBar（拖入底栏）")}
+						{fab.length > 0 && (
+							<div style={{ position: "absolute", bottom: 16, right: 16 }}>
+								{fab.map((n) => (
+									<PreviewNode
+										key={n.id}
+										node={n}
+										onSelect={onSelect}
+										dropIndicator={dropIndicator}
+									/>
+								))}
+							</div>
+						)}
+					</div>
+				);
+			}
 		}
 	}
 
@@ -712,10 +934,16 @@ export function PreviewNode({
 		<div
 			{...nodeAttrs}
 			{...dragProps}
-			style={{ ...wrapperStyle, padding: 4, color: "#888", fontSize: 12 }}
+			style={{
+				...wrapperStyle,
+				padding: 4,
+				color: "#888",
+				fontSize: 12,
+				minHeight: CONTAINER_MIN_HEIGHT,
+			}}
 			onClick={handleClick}
 		>
-			{node.type}
+			{node.children.length > 0 ? childrenContent : node.type}
 		</div>
 	);
 }

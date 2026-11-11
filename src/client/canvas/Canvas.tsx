@@ -234,8 +234,11 @@ export function Canvas({
 					transform: `scale(${device.zoom})`,
 					transformOrigin: "top center",
 					width: widthDp,
+					height: heightDp,
 					minHeight: heightDp,
 					margin: "0 auto",
+					display: "flex",
+					flexDirection: "column",
 					background: "#FFFFFF",
 					borderRadius: UI.radius.xl,
 					boxShadow: UI.shadow.lg,
@@ -252,6 +255,7 @@ export function Canvas({
 					node={tree}
 					onSelect={handleSelect}
 					dropIndicator={dropIndicator}
+					showBorders={state.ui.showBorders}
 				/>
 			</div>
 		</div>

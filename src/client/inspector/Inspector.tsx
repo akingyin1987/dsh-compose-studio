@@ -1,6 +1,7 @@
 // 属性面板（按 PropSchema 动态生成表单）—— Dark Mode 设计
 import React from "react";
-import type { PropSchema, TextStyleSpec } from "../../shared/document.js";
+import type { PropSchema, TextStyleSpec, SizeMode } from "../../shared/document.js";
+import { getSizeMode } from "../../shared/document.js";
 import type { StudioState, Action } from "../store.js";
 import { findDescriptor } from "../palette/catalog.js";
 import { UI } from "../theme/ui.js";
@@ -192,10 +193,18 @@ export function PropField({
 
 /** 通用 Modifier 字段（所有组件可用；存于 node.props，modifier 前缀避免冲突）。 */
 export const MODIFIER_FIELDS = [
-	{ key: "modifierWidth", label: "宽 (dp)", kind: "dp" },
-	{ key: "modifierHeight", label: "高 (dp)", kind: "dp" },
+	{ key: "modifierWidth", label: "宽", kind: "size" },
+	{ key: "modifierHeight", label: "高", kind: "size" },
 	{ key: "modifierPadding", label: "内边距 (dp)", kind: "dp" },
 	{ key: "modifierBackground", label: "背景色", kind: "color" },
+] as const;
+
+/** 尺寸模式选项。 */
+export const SIZE_MODE_OPTIONS = [
+	{ value: "fixed", label: "固定 (dp)" },
+	{ value: "wrap", label: "包裹内容" },
+	{ value: "match", label: "填充父容器" },
+	{ value: "weight", label: "权重 (weight)" },
 ] as const;
 
 /** 从 props 读取修饰符样式（纯函数，可测试）。 */
@@ -218,6 +227,43 @@ function ModifierSection({
 		return typeof v === "number" ? v : typeof v === "string" ? v : "";
 	};
 
+	/** 尺寸字段：模式下拉 + 数值输入（fixed/weight 时）。 */
+	const renderSizeField = (field: typeof MODIFIER_FIELDS[number]): React.ReactNode => {
+		const mode = getSizeMode(props, field.key);
+		const raw = props[field.key];
+		const numValue = typeof raw === "number" ? raw : "";
+		const showNumber = mode === "fixed" || mode === "weight";
+		return (
+			<div style={{ display: "flex", gap: UI.space.sm, alignItems: "center" }}>
+				<select
+					value={mode}
+					onChange={(e) =>
+						setProp(`${field.key}Mode`, e.target.value as SizeMode)
+					}
+					style={{ ...inputStyle, width: 110 }}
+				>
+					{SIZE_MODE_OPTIONS.map((opt) => (
+						<option key={opt.value} value={opt.value}>
+							{opt.label}
+						</option>
+					))}
+				</select>
+				{showNumber && (
+					<input
+						type="number"
+						style={{ ...inputStyle, width: 70 }}
+						value={numValue}
+						placeholder={mode === "weight" ? "1" : "dp"}
+						onChange={(e) => {
+							const v = e.target.value;
+							setProp(field.key, v === "" ? undefined : Number(v));
+						}}
+					/>
+				)}
+			</div>
+		);
+	};
+
 	return (
 		<div style={{ marginBottom: UI.space.md }}>
 			<div
@@ -234,7 +280,9 @@ function ModifierSection({
 			</div>
 			{MODIFIER_FIELDS.map((field) => (
 				<FieldRow key={field.key} label={field.label}>
-					{field.kind === "dp" ? (
+					{field.kind === "size" ? (
+						renderSizeField(field)
+					) : field.kind === "dp" ? (
 						<input
 							type="number"
 							style={{ ...inputStyle, width: 90 }}

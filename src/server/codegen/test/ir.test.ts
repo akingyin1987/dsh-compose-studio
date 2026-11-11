@@ -179,6 +179,72 @@ describe("buildIr", () => {
 		expect(a).toEqual(b);
 	});
 
+	it("modifier 尺寸模式：wrap/match/weight/fixed", () => {
+		const doc = makeDoc(
+			[
+				{
+					id: "root",
+					type: "layout.Column",
+					props: {},
+					children: ["c1", "c2", "c3", "c4"],
+				},
+				{ id: "c1", type: "layout.Box", props: { modifierWidthMode: "wrap" }, children: [] },
+				{ id: "c2", type: "layout.Box", props: { modifierWidthMode: "match" }, children: [] },
+				{
+					id: "c3",
+					type: "layout.Box",
+					props: { modifierWidthMode: "weight", modifierWidth: 1 },
+					children: [],
+				},
+				{
+					id: "c4",
+					type: "layout.Box",
+					props: { modifierWidthMode: "fixed", modifierWidth: 100 },
+					children: [],
+				},
+			],
+			"root",
+		);
+		const ir = buildIr(doc);
+		const [c1, c2, c3, c4] = ir.children ?? [];
+		const code = (n: typeof c1): string => {
+			const attr = n.attrs.find((a) => a.name === "modifier");
+			return attr?.value.kind === "expression" ? attr.value.code : "";
+		};
+		expect(code(c1)).toContain("wrapContentWidth");
+		expect(code(c2)).toContain("fillMaxWidth");
+		expect(code(c3)).toContain(".weight(1f)");
+		expect(code(c4)).toContain(".width(100.dp)");
+	});
+
+	it("Button text 属性 → 默认 Text 子节点（不作为参数）", () => {
+		const doc = makeDoc(
+			[
+				{
+					id: "root",
+					type: "layout.Column",
+					props: {},
+					children: ["btn"],
+				},
+				{
+					id: "btn",
+					type: "m3.Button",
+					props: { text: "Submit" },
+					children: [],
+				},
+			],
+			"root",
+		);
+		const ir = buildIr(doc);
+		const btn = ir.children?.[0];
+		expect(btn?.attrs.some((a) => a.name === "text")).toBe(false);
+		expect(btn?.slots?.content?.[0]?.composable).toBe("Text");
+		expect(btn?.slots?.content?.[0]?.attrs).toContainEqual({
+			name: "text",
+			value: { kind: "literal", value: "Submit" },
+		});
+	});
+
 	it("Button 空 children → slots.content 空数组", () => {
 		const doc = makeDoc(
 			[

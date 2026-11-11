@@ -5,8 +5,9 @@ import type {
 	ContainerNode,
 	LeafNode,
 	Node,
+	SizeMode,
 } from "../../shared/document.js";
-import { isContainerNode } from "../../shared/document.js";
+import { isContainerNode, getSizeMode } from "../../shared/document.js";
 import type { ComponentDescriptor } from "../palette/catalog.js";
 
 /** 拖拽数据类型（palette 与 canvas 共用；payload 为 descriptor id 或节点 id）。 */
@@ -119,24 +120,54 @@ export function isInSubtree(
 	return walk(root);
 }
 
-/** 从节点 props 读取修饰符样式（宽/高/内边距/背景色，纯函数）。
- * key 带 modifier 前缀，避免与组件自身属性（如 Image 的 width）冲突。 */
-export function getModifierStyle(
-	props: Record<string, unknown>,
-): {
-	width?: number;
-	height?: number;
+/** 修饰符样式（宽/高/内边距/背景色/权重）。 */
+export interface ModifierStyle {
+	width?: number | string;
+	height?: number | string;
 	padding?: number;
 	background?: string;
-} {
+	flex?: number;
+}
+
+/** 尺寸值 → CSS（wrap=auto，match=100%，weight=undefined 走 flex，fixed=px）。 */
+function sizeValue(raw: unknown, mode: SizeMode): number | string | undefined {
+	switch (mode) {
+		case "wrap":
+			return "auto";
+		case "match":
+			return "100%";
+		case "weight":
+			return undefined;
+		case "fixed":
+			return raw != null ? Number(raw) : undefined;
+	}
+}
+
+/** 从节点 props 读取修饰符样式（宽/高/内边距/背景色/权重，纯函数）。
+ * key 带 modifier 前缀，避免与组件自身属性（如 Image 的 width）冲突。
+ * 尺寸模式：props.modifierWidthMode / modifierHeightMode（fixed/wrap/match/weight）。 */
+export function getModifierStyle(
+	props: Record<string, unknown>,
+): ModifierStyle {
+	const widthMode = getSizeMode(props, "modifierWidth");
+	const heightMode = getSizeMode(props, "modifierHeight");
+	// weight：Row 子节点用宽度权重，Column 子节点用高度权重
+	let flex: number | undefined;
+	if (widthMode === "weight" && props.modifierWidth != null) {
+		flex = Number(props.modifierWidth);
+	} else if (heightMode === "weight" && props.modifierHeight != null) {
+		flex = Number(props.modifierHeight);
+	}
 	return {
-		width: props.modifierWidth != null ? Number(props.modifierWidth) : undefined,
-		height: props.modifierHeight != null ? Number(props.modifierHeight) : undefined,
-		padding: props.modifierPadding != null ? Number(props.modifierPadding) : undefined,
+		width: sizeValue(props.modifierWidth, widthMode),
+		height: sizeValue(props.modifierHeight, heightMode),
+		padding:
+			props.modifierPadding != null ? Number(props.modifierPadding) : undefined,
 		background:
 			typeof props.modifierBackground === "string"
 				? props.modifierBackground
 				: undefined,
+		flex,
 	};
 }
 

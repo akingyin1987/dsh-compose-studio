@@ -32,7 +32,7 @@ function makeState(anchorId: string | null): StudioState {
 		theme: createDefaultTheme(),
 		device: { activeId: "phone", zoom: 1, showGrid: false },
 		history: { undo: [], redo: [] },
-		ui: { leftWidth: 240, rightWidth: 320, inspectorTab: "props" },
+		ui: { leftWidth: 240, rightWidth: 320, inspectorTab: "props", showBorders: true },
 	};
 }
 

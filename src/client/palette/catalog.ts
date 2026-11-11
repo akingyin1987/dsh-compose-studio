@@ -43,6 +43,25 @@ export interface ComponentCategory {
 	children: ComponentDescriptor[];
 }
 
+// ===== 排列/对齐枚举 =====
+
+/** 排列选项（Column 垂直 / Row 水平）。 */
+export const ARRANGEMENT_OPTIONS: { value: string; label: string }[] = [
+	{ value: "top", label: "顶部/起始" },
+	{ value: "center", label: "居中" },
+	{ value: "bottom", label: "底部/末尾" },
+	{ value: "spaceBetween", label: "两端对齐" },
+	{ value: "spaceAround", label: "均匀分布" },
+	{ value: "spaceEvenly", label: "等间距" },
+];
+
+/** 对齐选项（Column 水平 / Row 垂直）。 */
+export const ALIGNMENT_OPTIONS: { value: string; label: string }[] = [
+	{ value: "start", label: "起始" },
+	{ value: "center", label: "居中" },
+	{ value: "end", label: "末尾" },
+];
+
 // ===== 便捷构造器 =====
 
 function m3(
@@ -115,12 +134,20 @@ const DESCRIPTORS: ComponentDescriptor[] = [
 	// ================= 布局（8） =================
 	layout("layout.Column", "Column", "垂直布局容器", {
 		icon: "columns",
-		defaultProps: [{ kind: "dp", key: "spacing", label: "间距", default: 8 }],
+		defaultProps: [
+			{ kind: "dp", key: "spacing", label: "间距", default: 8 },
+			{ kind: "enum", key: "verticalArrangement", label: "垂直排列", options: ARRANGEMENT_OPTIONS, default: "top" },
+			{ kind: "enum", key: "horizontalAlignment", label: "水平对齐", options: ALIGNMENT_OPTIONS, default: "start" },
+		],
 		tags: ["column", "vertical", "layout", "排列"],
 	}),
 	layout("layout.Row", "Row", "水平布局容器", {
 		icon: "rows",
-		defaultProps: [{ kind: "dp", key: "spacing", label: "间距", default: 8 }],
+		defaultProps: [
+			{ kind: "dp", key: "spacing", label: "间距", default: 8 },
+			{ kind: "enum", key: "horizontalArrangement", label: "水平排列", options: ARRANGEMENT_OPTIONS, default: "start" },
+			{ kind: "enum", key: "verticalAlignment", label: "垂直对齐", options: ALIGNMENT_OPTIONS, default: "center" },
+		],
 		tags: ["row", "horizontal", "layout"],
 	}),
 	layout("layout.Box", "Box", "层叠布局容器", {
@@ -172,7 +199,10 @@ const DESCRIPTORS: ComponentDescriptor[] = [
 	// ================= Material 3 —— 按钮（5） =================
 	m3("m3.Button", "Button", "按钮（含 content 槽）", {
 		icon: "mouse-pointer-click",
-		defaultProps: [{ kind: "event", key: "onClick", label: "点击", actions: ["onClick"] }],
+		defaultProps: [
+			{ kind: "string", key: "text", label: "文本", default: "Button" },
+			{ kind: "event", key: "onClick", label: "点击", actions: ["onClick"] },
+		],
 		defaultChildren: { slotProp: "content" },
 		codegen: { imports: ["androidx.compose.material3.Button"], render: "slot", slotProp: "content" },
 		preview: { kind: "button", text: "Button" },
@@ -180,7 +210,10 @@ const DESCRIPTORS: ComponentDescriptor[] = [
 	}),
 	m3("m3.FilledTonalButton", "FilledTonalButton", "填充色调按钮", {
 		icon: "rectangle-horizontal",
-		defaultProps: [{ kind: "event", key: "onClick", label: "点击", actions: ["onClick"] }],
+		defaultProps: [
+			{ kind: "string", key: "text", label: "文本", default: "Tonal" },
+			{ kind: "event", key: "onClick", label: "点击", actions: ["onClick"] },
+		],
 		defaultChildren: { slotProp: "content" },
 		codegen: { imports: ["androidx.compose.material3.FilledTonalButton"], render: "slot", slotProp: "content" },
 		preview: { kind: "button", text: "Tonal" },
@@ -188,7 +221,10 @@ const DESCRIPTORS: ComponentDescriptor[] = [
 	}),
 	m3("m3.OutlinedButton", "OutlinedButton", "描边按钮", {
 		icon: "square",
-		defaultProps: [{ kind: "event", key: "onClick", label: "点击", actions: ["onClick"] }],
+		defaultProps: [
+			{ kind: "string", key: "text", label: "文本", default: "Outlined" },
+			{ kind: "event", key: "onClick", label: "点击", actions: ["onClick"] },
+		],
 		defaultChildren: { slotProp: "content" },
 		codegen: { imports: ["androidx.compose.material3.OutlinedButton"], render: "slot", slotProp: "content" },
 		preview: { kind: "button", text: "Outlined" },
@@ -196,7 +232,10 @@ const DESCRIPTORS: ComponentDescriptor[] = [
 	}),
 	m3("m3.TextButton", "TextButton", "文本按钮", {
 		icon: "text",
-		defaultProps: [{ kind: "event", key: "onClick", label: "点击", actions: ["onClick"] }],
+		defaultProps: [
+			{ kind: "string", key: "text", label: "文本", default: "Text" },
+			{ kind: "event", key: "onClick", label: "点击", actions: ["onClick"] },
+		],
 		defaultChildren: { slotProp: "content" },
 		codegen: { imports: ["androidx.compose.material3.TextButton"], render: "slot", slotProp: "content" },
 		preview: { kind: "button", text: "Text" },
@@ -204,7 +243,10 @@ const DESCRIPTORS: ComponentDescriptor[] = [
 	}),
 	m3("m3.ElevatedButton", "ElevatedButton", "抬高按钮（阴影）", {
 		icon: "layers",
-		defaultProps: [{ kind: "event", key: "onClick", label: "点击", actions: ["onClick"] }],
+		defaultProps: [
+			{ kind: "string", key: "text", label: "文本", default: "Elevated" },
+			{ kind: "event", key: "onClick", label: "点击", actions: ["onClick"] },
+		],
 		defaultChildren: { slotProp: "content" },
 		codegen: { imports: ["androidx.compose.material3.ElevatedButton"], render: "slot", slotProp: "content" },
 		preview: { kind: "button", text: "Elevated" },
@@ -585,6 +627,114 @@ const DESCRIPTORS: ComponentDescriptor[] = [
 		preview: { kind: "text", text: "Basic" },
 		tags: ["text", "basic", "文本"],
 	}),
+];
+
+/** 面板功能分组（左侧组件面板按此顺序展示）。 */
+export interface PaletteGroup {
+	id: string;
+	label: string;
+	descriptors: string[];
+}
+
+export const PALETTE_GROUPS: PaletteGroup[] = [
+	{
+		id: "buttons",
+		label: "按钮",
+		descriptors: [
+			"m3.Button",
+			"m3.FilledTonalButton",
+			"m3.OutlinedButton",
+			"m3.TextButton",
+			"m3.ElevatedButton",
+			"m3.SegmentedButton",
+			"m3.IconButton",
+			"m3.FloatingActionButton",
+			"m3.ExtendedFloatingActionButton",
+		],
+	},
+	{
+		id: "selection",
+		label: "选择控件",
+		descriptors: ["m3.Checkbox", "m3.RadioButton", "m3.Switch", "m3.Slider"],
+	},
+	{
+		id: "text",
+		label: "文本",
+		descriptors: ["m3.Text", "content.BasicText"],
+	},
+	{
+		id: "input",
+		label: "输入",
+		descriptors: [
+			"m3.TextField",
+			"m3.OutlinedTextField",
+			"m3.DatePicker",
+			"m3.TimePicker",
+		],
+	},
+	{
+		id: "containers",
+		label: "容器",
+		descriptors: [
+			"layout.Column",
+			"layout.Row",
+			"layout.Box",
+			"layout.FlowRow",
+			"layout.FlowColumn",
+			"layout.LazyColumn",
+			"layout.LazyRow",
+			"layout.Spacer",
+			"m3.Card",
+			"m3.ElevatedCard",
+			"m3.OutlinedCard",
+			"m3.Surface",
+			"m3.Scaffold",
+		],
+	},
+	{
+		id: "appbars",
+		label: "顶栏 / 底栏",
+		descriptors: ["m3.TopAppBar", "m3.ModalBottomSheet"],
+	},
+	{
+		id: "navigation",
+		label: "导航",
+		descriptors: ["m3.NavigationBar", "m3.NavigationRail", "m3.TabRow"],
+	},
+	{
+		id: "chips",
+		label: "标签",
+		descriptors: ["m3.AssistChip", "m3.FilterChip"],
+	},
+	{
+		id: "progress",
+		label: "进度",
+		descriptors: [
+			"m3.CircularProgressIndicator",
+			"m3.LinearProgressIndicator",
+		],
+	},
+	{
+		id: "feedback",
+		label: "反馈",
+		descriptors: ["m3.Snackbar", "m3.AlertDialog", "m3.Badge", "m3.PlainTooltip"],
+	},
+	{
+		id: "list",
+		label: "列表 / 菜单",
+		descriptors: ["m3.ListItem", "m3.DropdownMenu"],
+	},
+	{
+		id: "content",
+		label: "内容",
+		descriptors: [
+			"content.Image",
+			"content.Icon",
+			"content.Canvas",
+			"m3.HorizontalDivider",
+			"m3.VerticalDivider",
+		],
+	},
 ];
 
 export const CATALOG: ComponentCategory[] = [

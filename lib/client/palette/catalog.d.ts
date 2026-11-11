@@ -35,6 +35,23 @@ export interface ComponentCategory {
     icon?: string;
     children: ComponentDescriptor[];
 }
+/** 排列选项（Column 垂直 / Row 水平）。 */
+export declare const ARRANGEMENT_OPTIONS: {
+    value: string;
+    label: string;
+}[];
+/** 对齐选项（Column 水平 / Row 垂直）。 */
+export declare const ALIGNMENT_OPTIONS: {
+    value: string;
+    label: string;
+}[];
+/** 面板功能分组（左侧组件面板按此顺序展示）。 */
+export interface PaletteGroup {
+    id: string;
+    label: string;
+    descriptors: string[];
+}
+export declare const PALETTE_GROUPS: PaletteGroup[];
 export declare const CATALOG: ComponentCategory[];
 export declare const ALL_DESCRIPTORS: ComponentDescriptor[];
 export declare function findDescriptor(id: string): ComponentDescriptor | undefined;

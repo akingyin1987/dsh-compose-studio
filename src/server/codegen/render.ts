@@ -4,6 +4,7 @@
 import type {
 	IrNode,
 	IrAttr,
+	IrValue,
 	GenerateOptions,
 	FileOutput,
 } from "../../shared/ir.js";
@@ -33,6 +34,9 @@ export function render(
 	ctx.imports.add("androidx.compose.ui.Modifier");
 	if (hasArrangement(ir)) {
 		ctx.imports.add("androidx.compose.foundation.layout.Arrangement");
+	}
+	if (hasAlignment(ir)) {
+		ctx.imports.add("androidx.compose.ui.Alignment");
 	}
 
 	const lines: string[] = [
@@ -66,14 +70,66 @@ function renderNode(ir: IrNode, ctx: RenderContext, opts: RenderOptions): string
 	}
 
 	const args: string[] = [];
+
+	// Column/Row：合并 spacing + arrangement（避免重复参数）
+	if (ir.composable === "Column" || ir.composable === "Row") {
+		const isColumn = ir.composable === "Column";
+		const arrangementName = isColumn
+			? "verticalArrangement"
+			: "horizontalArrangement";
+		const spacingAttr = ir.attrs.find((a) => a.name === "spacing");
+		const arrangementAttr = ir.attrs.find((a) =>
+			isColumn
+				? a.name === "verticalArrangement"
+				: a.name === "horizontalArrangement",
+		);
+		const spacingValue =
+			spacingAttr?.value.kind === "literal" ? spacingAttr.value.value : undefined;
+		const arrangementStr =
+			arrangementAttr?.value.kind === "literal"
+				? String(arrangementAttr.value.value)
+				: undefined;
+		if (
+			arrangementStr &&
+			arrangementStr !== "top" &&
+			arrangementStr !== "start"
+		) {
+			const arr = arrangementValue(
+				arrangementStr,
+				isColumn ? "vertical" : "horizontal",
+			);
+			args.push(
+				spacingValue != null
+					? `${arrangementName} = ${arr}.spacedBy(${spacingValue}.dp)`
+					: `${arrangementName} = ${arr}`,
+			);
+		} else if (spacingValue != null) {
+			args.push(
+				`${arrangementName} = Arrangement.spacedBy(${spacingValue}.dp)`,
+			);
+		}
+	}
+
 	for (const attr of ir.attrs) {
-		// Column/Row spacing → Arrangement（官方语法）
-		if (ir.composable === "Column" && attr.name === "spacing") {
-			args.push(`verticalArrangement = Arrangement.spacedBy(${renderValue(attr)})`);
+		// spacing/arrangement 已合并处理
+		if (
+			attr.name === "spacing" ||
+			attr.name === "verticalArrangement" ||
+			attr.name === "horizontalArrangement"
+		) {
 			continue;
 		}
-		if (ir.composable === "Row" && attr.name === "spacing") {
-			args.push(`horizontalArrangement = Arrangement.spacedBy(${renderValue(attr)})`);
+		// Column/Row alignment
+		if (ir.composable === "Column" && attr.name === "horizontalAlignment") {
+			args.push(
+				`horizontalAlignment = ${alignmentValue(literalValue(attr.value), "horizontal")}`,
+			);
+			continue;
+		}
+		if (ir.composable === "Row" && attr.name === "verticalAlignment") {
+			args.push(
+				`verticalAlignment = ${alignmentValue(literalValue(attr.value), "vertical")}`,
+			);
 			continue;
 		}
 		// modifier：根节点用函数参数，子节点内联
@@ -237,11 +293,16 @@ function collectImports(ir: IrNode, imports: Set<string>): void {
 	}
 }
 
-/** 是否需要 Arrangement（Column/Row spacing）。 */
+/** 是否需要 Arrangement（Column/Row spacing/arrangement）。 */
 function hasArrangement(ir: IrNode): boolean {
 	if (
 		(ir.composable === "Column" || ir.composable === "Row") &&
-		ir.attrs.some((a) => a.name === "spacing")
+		ir.attrs.some(
+			(a) =>
+				a.name === "spacing" ||
+				a.name === "verticalArrangement" ||
+				a.name === "horizontalArrangement",
+		)
 	) {
 		return true;
 	}
@@ -254,6 +315,71 @@ function hasArrangement(ir: IrNode): boolean {
 		}
 	}
 	return false;
+}
+
+/** 是否需要 Alignment（Column/Row alignment）。 */
+function hasAlignment(ir: IrNode): boolean {
+	if (
+		(ir.composable === "Column" || ir.composable === "Row") &&
+		ir.attrs.some(
+			(a) => a.name === "horizontalAlignment" || a.name === "verticalAlignment",
+		)
+	) {
+		return true;
+	}
+	for (const child of ir.children ?? []) {
+		if (hasAlignment(child)) return true;
+	}
+	for (const slotChildren of Object.values(ir.slots ?? {})) {
+		for (const child of slotChildren) {
+			if (hasAlignment(child)) return true;
+		}
+	}
+	return false;
+}
+
+/** 排列值映射到 Compose Arrangement。 */
+function arrangementValue(
+	value: string,
+	axis: "vertical" | "horizontal",
+): string {
+	switch (value) {
+		case "top":
+			return axis === "vertical" ? "Arrangement.Top" : "Arrangement.Start";
+		case "center":
+			return "Arrangement.Center";
+		case "bottom":
+			return axis === "vertical" ? "Arrangement.Bottom" : "Arrangement.End";
+		case "spaceBetween":
+			return "Arrangement.SpaceBetween";
+		case "spaceAround":
+			return "Arrangement.SpaceAround";
+		case "spaceEvenly":
+			return "Arrangement.SpaceEvenly";
+		default:
+			return axis === "vertical" ? "Arrangement.Top" : "Arrangement.Start";
+	}
+}
+
+/** 提取 literal 值（非 literal 返回空串）。 */
+function literalValue(v: IrValue): string {
+	return v.kind === "literal" ? String(v.value) : "";
+}
+
+/** 对齐值映射到 Compose Alignment。 */
+function alignmentValue(value: string, axis: "horizontal" | "vertical"): string {
+	switch (value) {
+		case "start":
+			return axis === "horizontal" ? "Alignment.Start" : "Alignment.Top";
+		case "center":
+			return axis === "horizontal"
+				? "Alignment.CenterHorizontally"
+				: "Alignment.CenterVertically";
+		case "end":
+			return axis === "horizontal" ? "Alignment.End" : "Alignment.Bottom";
+		default:
+			return axis === "horizontal" ? "Alignment.Start" : "Alignment.Top";
+	}
 }
 
 function header(): string {

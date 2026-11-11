@@ -169,6 +169,29 @@ describe("getModifierStyle", () => {
 			background: "#FF0000",
 		});
 	});
+	it("尺寸模式：wrap → auto", () => {
+		expect(getModifierStyle({ modifierWidthMode: "wrap" }).width).toBe("auto");
+	});
+	it("尺寸模式：match → 100%", () => {
+		expect(getModifierStyle({ modifierWidthMode: "match" }).width).toBe("100%");
+	});
+	it("尺寸模式：weight → flex", () => {
+		const style = getModifierStyle({ modifierWidthMode: "weight", modifierWidth: 2 });
+		expect(style.flex).toBe(2);
+		expect(style.width).toBeUndefined();
+	});
+	it("尺寸模式：weight 高度（Column 子节点）→ flex", () => {
+		const style = getModifierStyle({ modifierHeightMode: "weight", modifierHeight: 1 });
+		expect(style.flex).toBe(1);
+	});
+	it("尺寸模式：fixed → px", () => {
+		expect(
+			getModifierStyle({ modifierWidthMode: "fixed", modifierWidth: 100 }).width,
+		).toBe(100);
+	});
+	it("默认（无 mode）→ fixed", () => {
+		expect(getModifierStyle({ modifierWidth: 100 }).width).toBe(100);
+	});
 });
 
 describe("createNodeFromDescriptor", () => {

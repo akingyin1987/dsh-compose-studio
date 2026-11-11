@@ -104,6 +104,7 @@ package com.example.generated
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -113,7 +114,7 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun GeneratedScreen(modifier: Modifier = Modifier) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp))
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp), horizontalAlignment = Alignment.Start)
 }
 "
 `;
@@ -133,7 +134,7 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun GeneratedScreen(modifier: Modifier = Modifier) {
-    FlowColumn(spacing = 8.dp)
+    FlowColumn()
 }
 "
 `;
@@ -153,7 +154,7 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun GeneratedScreen(modifier: Modifier = Modifier) {
-    FlowRow(spacing = 8.dp)
+    FlowRow()
 }
 "
 `;
@@ -173,7 +174,7 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun GeneratedScreen(modifier: Modifier = Modifier) {
-    LazyColumn(spacing = 8.dp)
+    LazyColumn()
 }
 "
 `;
@@ -193,7 +194,7 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun GeneratedScreen(modifier: Modifier = Modifier) {
-    LazyRow(spacing = 8.dp)
+    LazyRow()
 }
 "
 `;
@@ -205,6 +206,7 @@ package com.example.generated
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
@@ -214,7 +216,7 @@ import androidx.compose.ui.unit.dp
  */
 @Composable
 fun GeneratedScreen(modifier: Modifier = Modifier) {
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically)
 }
 "
 `;
@@ -301,6 +303,7 @@ exports[`render 快照：全部内置组件 > 快照 m3.Button 1`] = `
 package com.example.generated
 
 import androidx.compose.material3.Button
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
@@ -310,7 +313,17 @@ import androidx.compose.ui.Modifier
  */
 @Composable
 fun GeneratedScreen(modifier: Modifier = Modifier) {
-    Button(onClick = { /* TODO: 处理点击 */ }) { }
+    Button(onClick = { /* TODO: 处理点击 */ }) {
+        GeneratedContent(modifier = Modifier)
+    }
+}
+
+/**
+ * GeneratedContent — 提取的区域。
+ */
+@Composable
+private fun GeneratedContent(modifier: Modifier = Modifier) {
+    Text(text = "Button")
 }
 "
 `;
@@ -415,6 +428,7 @@ exports[`render 快照：全部内置组件 > 快照 m3.ElevatedButton 1`] = `
 package com.example.generated
 
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
@@ -424,7 +438,17 @@ import androidx.compose.ui.Modifier
  */
 @Composable
 fun GeneratedScreen(modifier: Modifier = Modifier) {
-    ElevatedButton(onClick = { /* TODO: 处理点击 */ }) { }
+    ElevatedButton(onClick = { /* TODO: 处理点击 */ }) {
+        GeneratedContent(modifier = Modifier)
+    }
+}
+
+/**
+ * GeneratedContent — 提取的区域。
+ */
+@Composable
+private fun GeneratedContent(modifier: Modifier = Modifier) {
+    Text(text = "Elevated")
 }
 "
 `;
@@ -472,6 +496,7 @@ exports[`render 快照：全部内置组件 > 快照 m3.FilledTonalButton 1`] = 
 package com.example.generated
 
 import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
@@ -481,7 +506,17 @@ import androidx.compose.ui.Modifier
  */
 @Composable
 fun GeneratedScreen(modifier: Modifier = Modifier) {
-    FilledTonalButton(onClick = { /* TODO: 处理点击 */ }) { }
+    FilledTonalButton(onClick = { /* TODO: 处理点击 */ }) {
+        GeneratedContent(modifier = Modifier)
+    }
+}
+
+/**
+ * GeneratedContent — 提取的区域。
+ */
+@Composable
+private fun GeneratedContent(modifier: Modifier = Modifier) {
+    Text(text = "Tonal")
 }
 "
 `;
@@ -663,6 +698,7 @@ exports[`render 快照：全部内置组件 > 快照 m3.OutlinedButton 1`] = `
 package com.example.generated
 
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
@@ -672,7 +708,17 @@ import androidx.compose.ui.Modifier
  */
 @Composable
 fun GeneratedScreen(modifier: Modifier = Modifier) {
-    OutlinedButton(onClick = { /* TODO: 处理点击 */ }) { }
+    OutlinedButton(onClick = { /* TODO: 处理点击 */ }) {
+        GeneratedContent(modifier = Modifier)
+    }
+}
+
+/**
+ * GeneratedContent — 提取的区域。
+ */
+@Composable
+private fun GeneratedContent(modifier: Modifier = Modifier) {
+    Text(text = "Outlined")
 }
 "
 `;
@@ -720,6 +766,7 @@ exports[`render 快照：全部内置组件 > 快照 m3.PlainTooltip 1`] = `
 package com.example.generated
 
 import androidx.compose.material3.PlainTooltip
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
@@ -729,7 +776,17 @@ import androidx.compose.ui.Modifier
  */
 @Composable
 fun GeneratedScreen(modifier: Modifier = Modifier) {
-    PlainTooltip(text = "Tooltip") { }
+    PlainTooltip() {
+        GeneratedContent(modifier = Modifier)
+    }
+}
+
+/**
+ * GeneratedContent — 提取的区域。
+ */
+@Composable
+private fun GeneratedContent(modifier: Modifier = Modifier) {
+    Text(text = "Tooltip")
 }
 "
 `;
@@ -909,6 +966,7 @@ exports[`render 快照：全部内置组件 > 快照 m3.TextButton 1`] = `
 "// Generated by dsh-compose-studio. Do not edit manually.
 package com.example.generated
 
+import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -919,7 +977,17 @@ import androidx.compose.ui.Modifier
  */
 @Composable
 fun GeneratedScreen(modifier: Modifier = Modifier) {
-    TextButton(onClick = { /* TODO: 处理点击 */ }) { }
+    TextButton(onClick = { /* TODO: 处理点击 */ }) {
+        GeneratedContent(modifier = Modifier)
+    }
+}
+
+/**
+ * GeneratedContent — 提取的区域。
+ */
+@Composable
+private fun GeneratedContent(modifier: Modifier = Modifier) {
+    Text(text = "Text")
 }
 "
 `;

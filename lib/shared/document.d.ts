@@ -116,6 +116,10 @@ export type PropSchema = {
     label: string;
     accepts: string[];
 };
+/** 尺寸模式：fixed（固定 dp）、wrap（包裹内容）、match（填充父容器）、weight（权重，仅 Row/Column 子节点）。 */
+export type SizeMode = "fixed" | "wrap" | "match" | "weight";
+/** 读取尺寸模式（默认 fixed，兼容旧数据）。 */
+export declare function getSizeMode(props: Record<string, unknown>, key: string): SizeMode;
 export interface InvariantErrors {
     /** 节点被多个父节点引用（违反"至多一个父节点"）。 */
     duplicateParents: string[];

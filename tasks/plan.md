@@ -83,6 +83,18 @@
 - [x] Material 3 40（Buttons 5/FAB 2/Card 3/Selection 4/Chip 2/Dialog/Divider 2/ListItem/Menu/Navigation 2/Progress 2/Snackbar/TabRow/TextField 2/TopAppBar/Badge/BottomSheet/Pickers 2/Tooltip/SegmentedButton/Surface/Scaffold/Text）
 - [x] 内容 4（Image/Icon/Canvas/BasicText）
 - [x] PreviewRenderer 支持全部 52 个组件的 React 占位渲染
+- [x] PALETTE_GROUPS 功能分组（按钮/选择/文本/输入/容器/导航/标签/进度/反馈/列表/内容）
+- [x] Button 变体可编辑 text 属性
+
+### UI 交互优化（2026-11-11）
+- [x] Modifier 尺寸模式：fixed/wrap/match/weight（Inspector 下拉 + codegen）
+- [x] Column/Row arrangement/alignment（顶部/居中/底部/两端对齐/均匀分布/等间距 + 对齐）
+- [x] 容器边界虚线（ui.showBorders 开关，默认开）
+- [x] Scaffold 按槽渲染（TopAppBar/BottomAppBar/FAB/Content）
+- [x] 设备框固定 height，修复 Scaffold 高度塌缩
+- [x] Button 五种类型外观（Filled/Tonal/Elevated/Outlined/Text，官方规范）
+- [x] 修复 modifier 背景被组件默认背景覆盖（样式顺序）
+- [x] 事件参数名唯一化（handle<Component><Event>，避免重复）
 
 ### 后续阶段概要（不展开任务）
 - Phase 2：ThemePanel（M3 colorScheme/typography/shapes）、多设备预览、主题预设

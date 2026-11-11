@@ -280,6 +280,22 @@ function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 								导出
 							</button>
 							<button
+								onClick={() => dispatch({ type: "ui/toggleBorders" })}
+								title="显示/隐藏容器边界"
+								style={{
+									border: `1px solid ${state.ui.showBorders ? UI.primary : UI.border}`,
+									background: state.ui.showBorders ? UI.primaryContainer : UI.surfaceAlt,
+									color: state.ui.showBorders ? UI.primary : UI.textMuted,
+									borderRadius: UI.radius.md,
+									padding: `${UI.space.xs}px ${UI.space.sm}px`,
+									fontSize: 13,
+									cursor: "pointer",
+									fontFamily: UI.fontSans,
+								}}
+							>
+								{state.ui.showBorders ? "边界✓" : "边界"}
+							</button>
+							<button
 								onClick={() => dispatch({ type: "history/undo" })}
 								disabled={state.history.undo.length === 0}
 								title="撤销（Ctrl+Z）"

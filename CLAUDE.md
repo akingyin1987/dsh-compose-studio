@@ -66,7 +66,8 @@ npm run build       # node build.mjs：tsc 生成 d.ts + esbuild 打包 JS
 - **存储**：`src/server/store/workspace.ts`（`resolveSafePath` fence）+ `repository.ts`（`DocumentRepository`：load/save/listDocs/listDir/exists/readFile/writeFile）。
 - **服务端 RPC**：`src/server/rpc.ts`（`doc/load`、`doc/save`、`doc/export`、`fs/list`、`ping`）+ `src/server/tools.ts`（`compose_studio_export`）。
 - **客户端 RPC**：`src/client/rpc.ts`（`RpcClient`）+ store 文档生命周期（`doc/new`、`doc/load`、`doc/rename`）+ index.tsx（debounce 1500ms 自动保存、新建/打开/导出、保存状态提示）。
-- **组件目录**：`src/client/palette/catalog.ts`（52 个：布局 8 + Material 3 40 + 内容 4），`PreviewRenderer.tsx` 支持全部占位渲染。
+- **组件目录**：`src/client/palette/catalog.ts`（52 个：布局 8 + Material 3 40 + 内容 4），`PreviewRenderer.tsx` 支持全部占位渲染；`PALETTE_GROUPS` 按功能分组（按钮/选择/文本/输入/容器/导航/标签/进度/反馈/列表/内容）；Button 变体含可编辑 `text` 属性（Inspector 编辑 → codegen 生成 `Text(text=...)` 内容）。
+- **UI 交互优化**（2026-11-11）：Modifier 尺寸模式（fixed/wrap/match/weight，`props.modifier*Mode`）；Column/Row arrangement/alignment（`verticalArrangement`/`horizontalAlignment` 等枚举）；容器边界虚线（`ui.showBorders` 开关，默认开）；Scaffold 按槽渲染（topBar/bottomBar/fab/content）；设备框固定 `height` 避免塌缩。
 
 ### 插件清单与挂载
 

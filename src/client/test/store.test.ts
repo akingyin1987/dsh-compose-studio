@@ -40,7 +40,7 @@ function makeState(overrides?: Partial<StudioState>): StudioState {
 		theme: createDefaultTheme(),
 		device: { activeId: "phone", zoom: 1, showGrid: false },
 		history: { undo: [], redo: [] },
-		ui: { leftWidth: 240, rightWidth: 320, inspectorTab: "props" },
+		ui: { leftWidth: 240, rightWidth: 320, inspectorTab: "props", showBorders: true },
 		...overrides,
 	};
 }
@@ -359,5 +359,14 @@ describe("文档生命周期", () => {
 		expect(doc.root.id).toBe("root");
 		expect(doc.nodes.root).toEqual(doc.root);
 		expect(doc.devices.length).toBeGreaterThan(0);
+	});
+
+	it("ui/toggleBorders 切换容器边界显示", () => {
+		const s = makeState();
+		expect(s.ui.showBorders).toBe(true);
+		const next = reducer(s, { type: "ui/toggleBorders" });
+		expect(next.ui.showBorders).toBe(false);
+		const back = reducer(next, { type: "ui/toggleBorders" });
+		expect(back.ui.showBorders).toBe(true);
 	});
 });

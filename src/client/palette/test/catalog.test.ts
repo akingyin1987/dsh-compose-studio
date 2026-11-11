@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
 	CATALOG,
 	ALL_DESCRIPTORS,
+	PALETTE_GROUPS,
 	findDescriptor,
 	searchDescriptors,
 } from "../catalog.js";
@@ -103,5 +104,23 @@ describe("ComponentCatalog", () => {
 	it("分类树完整覆盖所有 descriptor", () => {
 		const inTree = CATALOG.flatMap((c) => c.children.map((d) => d.id));
 		expect(inTree.sort()).toEqual(ALL_DESCRIPTORS.map((d) => d.id).sort());
+	});
+
+	it("PALETTE_GROUPS 覆盖全部 descriptor", () => {
+		const grouped = PALETTE_GROUPS.flatMap((g) => g.descriptors);
+		expect(grouped.sort()).toEqual(ALL_DESCRIPTORS.map((d) => d.id).sort());
+	});
+
+	it("Button 变体含可编辑 text 属性", () => {
+		for (const id of [
+			"m3.Button",
+			"m3.FilledTonalButton",
+			"m3.OutlinedButton",
+			"m3.TextButton",
+			"m3.ElevatedButton",
+		]) {
+			const d = findDescriptor(id);
+			expect(d?.defaultProps.some((p) => p.kind === "string" && p.key === "text")).toBe(true);
+		}
 	});
 });

@@ -211,6 +211,118 @@ describe("render", () => {
 	});
 });
 
+describe("Column/Row 排列与对齐", () => {
+	it("Column：arrangement 合并 spacing + alignment", () => {
+		const doc = makeDoc(
+			[
+				{
+					id: "root",
+					type: "layout.Column",
+					props: {
+						spacing: 8,
+						verticalArrangement: "spaceBetween",
+						horizontalAlignment: "center",
+					},
+					children: [],
+				},
+			],
+			"root",
+		);
+		const [file] = render(buildIr(doc));
+		expect(file.source).toContain(
+			"verticalArrangement = Arrangement.SpaceBetween.spacedBy(8.dp)",
+		);
+		expect(file.source).toContain(
+			"horizontalAlignment = Alignment.CenterHorizontally",
+		);
+		expect(file.source).toContain("import androidx.compose.ui.Alignment");
+	});
+
+	it("Row：arrangement + verticalAlignment", () => {
+		const doc = makeDoc(
+			[
+				{
+					id: "root",
+					type: "layout.Row",
+					props: {
+						spacing: 8,
+						horizontalArrangement: "center",
+						verticalAlignment: "end",
+					},
+					children: [],
+				},
+			],
+			"root",
+		);
+		const [file] = render(buildIr(doc));
+		expect(file.source).toContain(
+			"horizontalArrangement = Arrangement.Center.spacedBy(8.dp)",
+		);
+		expect(file.source).toContain("verticalAlignment = Alignment.Bottom");
+	});
+
+	it("默认 arrangement 不生成额外参数（避免重复）", () => {
+		const doc = makeDoc(
+			[
+				{
+					id: "root",
+					type: "layout.Column",
+					props: { spacing: 8, verticalArrangement: "top" },
+					children: [],
+				},
+			],
+			"root",
+		);
+		const [file] = render(buildIr(doc));
+		expect(file.source).toContain(
+			"verticalArrangement = Arrangement.spacedBy(8.dp)",
+		);
+		// 不应出现重复的 verticalArrangement
+		expect(
+			file.source.match(/verticalArrangement = /g)?.length ?? 0,
+		).toBe(1);
+	});
+
+	it("Button text → Text 内容", () => {
+		const doc = makeDoc(
+			[
+				{
+					id: "root",
+					type: "layout.Column",
+					props: {},
+					children: ["btn"],
+				},
+				{
+					id: "btn",
+					type: "m3.Button",
+					props: { text: "Submit" },
+					children: [],
+				},
+			],
+			"root",
+		);
+		const [file] = render(buildIr(doc));
+		expect(file.source).toContain('Text(text = "Submit")');
+		expect(file.source).toContain("Button(");
+		// text 不作为 Button 参数（而是 content 内的 Text）
+		expect(file.source).not.toContain("Button(text =");
+	});
+
+	it("Scaffold 槽：TopAppBar/内容分组渲染（结构快照）", () => {
+		const doc = makeDoc(
+			[
+				{ id: "root", type: "m3.Scaffold", props: {}, children: ["bar", "col"] },
+				{ id: "bar", type: "m3.TopAppBar", props: { title: "App" }, children: [] },
+				{ id: "col", type: "layout.Column", props: {}, children: [] },
+			],
+			"root",
+		);
+		const [file] = render(buildIr(doc));
+		expect(file.source).toContain("Scaffold(");
+		expect(file.source).toContain("TopAppBar(");
+	});
+});
+
 describe("render 快照：全部内置组件", () => {
 	for (const descriptor of ALL_DESCRIPTORS) {
 		it(`快照 ${descriptor.id}`, () => {

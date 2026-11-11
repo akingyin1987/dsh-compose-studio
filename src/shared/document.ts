@@ -76,6 +76,17 @@ export type PropSchema =
 	| { kind: "event"; key: string; label: string; actions: string[] }
 	| { kind: "slot"; key: string; label: string; accepts: string[] };
 
+// ===== 尺寸模式（Modifier 宽高） =====
+
+/** 尺寸模式：fixed（固定 dp）、wrap（包裹内容）、match（填充父容器）、weight（权重，仅 Row/Column 子节点）。 */
+export type SizeMode = "fixed" | "wrap" | "match" | "weight";
+
+/** 读取尺寸模式（默认 fixed，兼容旧数据）。 */
+export function getSizeMode(props: Record<string, unknown>, key: string): SizeMode {
+	const mode = props[`${key}Mode`];
+	return mode === "wrap" || mode === "match" || mode === "weight" ? mode : "fixed";
+}
+
 // ===== 不变式错误（5.3） =====
 
 export interface InvariantErrors {

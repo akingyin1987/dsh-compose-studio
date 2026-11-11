@@ -15,7 +15,13 @@ export interface StudioState {
 	theme: ThemeSpec;
 	device: { activeId: string; zoom: number; showGrid: boolean };
 	history: { undo: HistoryEntry[]; redo: HistoryEntry[] };
-	ui: { leftWidth: number; rightWidth: number; inspectorTab: "props" | "theme" };
+	ui: {
+		leftWidth: number;
+		rightWidth: number;
+		inspectorTab: "props" | "theme";
+		/** 显示容器边界虚线（默认开启）。 */
+		showBorders: boolean;
+	};
 }
 
 export interface ClipboardPayload {
@@ -67,7 +73,8 @@ export type Action =
 	// 文档生命周期
 	| { type: "doc/new"; docId: string; name?: string; ts?: number }
 	| { type: "doc/load"; doc: CanvasDocument; ts?: number }
-	| { type: "doc/rename"; name: string; ts?: number };
+	| { type: "doc/rename"; name: string; ts?: number }
+	| { type: "ui/toggleBorders"; ts?: number };
 
 const now = (): number => Date.now();
 
@@ -77,7 +84,7 @@ const now = (): number => Date.now();
 export function createInitialState(): StudioState {
 	const root: ContainerNode = {
 		id: "root",
-		type: "Scaffold",
+		type: "m3.Scaffold",
 		props: {},
 		children: ["col"],
 	};
@@ -113,7 +120,7 @@ export function createInitialState(): StudioState {
 		theme: createDefaultTheme(),
 		device: { activeId: "phone", zoom: 1, showGrid: false },
 		history: { undo: [], redo: [] },
-		ui: { leftWidth: 240, rightWidth: 320, inspectorTab: "props" },
+		ui: { leftWidth: 240, rightWidth: 320, inspectorTab: "props", showBorders: true },
 	};
 }
 
@@ -497,6 +504,11 @@ export function reducer(state: StudioState, action: Action): StudioState {
 			return {
 				...state,
 				document: { ...state.document, name: action.name },
+			};
+		case "ui/toggleBorders":
+			return {
+				...state,
+				ui: { ...state.ui, showBorders: !state.ui.showBorders },
 			};
 		default:
 			return state;

@@ -9,6 +9,7 @@ import type {
 } from "../../shared/document.js";
 import { isContainerNode } from "../../shared/document.js";
 import type { IrNode, IrAttr, IrValue } from "../../shared/ir.js";
+import { getSizeMode } from "../../shared/document.js";
 import { findDescriptor } from "../../client/palette/catalog.js";
 
 /** 修饰符属性 key（与 Inspector MODIFIER_FIELDS / drag.getModifierStyle 一致）。 */
@@ -55,6 +56,8 @@ function buildNode(doc: CanvasDocument, node: Node): IrNode {
 		for (const schema of descriptor.defaultProps) {
 			const value = node.props[schema.key];
 			if (value === undefined && schema.kind !== "event") continue;
+			// Button 类：text 属性 → 默认 Text 子节点（不作为参数）
+			if (schema.key === "text" && descriptor.codegen.render === "slot") continue;
 			const attr = propToAttr(schema, value);
 			if (attr) {
 				ir.attrs.push(attr);
@@ -90,6 +93,25 @@ function buildNode(doc: CanvasDocument, node: Node): IrNode {
 			ir.slots = { [descriptor.codegen.slotProp]: children };
 		} else if (children.length > 0) {
 			ir.children = children;
+		}
+	}
+
+	// Button 类：text 属性 → 默认 Text 子节点（无子节点时，渲染为 content 内容）
+	if (
+		isContainerNode(node) &&
+		descriptor?.codegen.render === "slot" &&
+		descriptor.codegen.slotProp &&
+		node.children.length === 0
+	) {
+		const textProp = node.props.text;
+		if (typeof textProp === "string" && textProp) {
+			const textNode: IrNode = {
+				composable: "Text",
+				imports: ["androidx.compose.material3.Text"],
+				attrs: [{ name: "text", value: { kind: "literal", value: textProp } }],
+				renderKind: "leaf",
+			};
+			ir.slots = { ...ir.slots, [descriptor.codegen.slotProp]: [textNode] };
 		}
 	}
 
@@ -154,11 +176,32 @@ function eventToCode(schema: PropSchema & { kind: "event" }): string {
 	return `{ /* TODO: 处理${schema.label} */ }`;
 }
 
+/** 尺寸 → Modifier 链片段（fixed/wrap/match/weight）。 */
+function sizeModifier(
+	props: Record<string, unknown>,
+	key: "modifierWidth" | "modifierHeight",
+	widthName: "width" | "height",
+): string | null {
+	const mode = getSizeMode(props, key);
+	switch (mode) {
+		case "wrap":
+			return `.wrapContent${widthName === "width" ? "Width" : "Height"}()`;
+		case "match":
+			return `.fillMax${widthName === "width" ? "Width" : "Height"}()`;
+		case "weight":
+			return props[key] != null ? `.weight(${props[key]}f)` : null;
+		case "fixed":
+			return props[key] != null ? `.${widthName}(${props[key]}.dp)` : null;
+	}
+}
+
 /** 修饰符 → Modifier 链表达式（无修饰符时返回 null）。 */
 function buildModifierExpression(props: Record<string, unknown>): string | null {
 	const parts: string[] = ["Modifier"];
-	if (props.modifierWidth != null) parts.push(`.width(${props.modifierWidth}.dp)`);
-	if (props.modifierHeight != null) parts.push(`.height(${props.modifierHeight}.dp)`);
+	const widthMod = sizeModifier(props, "modifierWidth", "width");
+	if (widthMod) parts.push(widthMod);
+	const heightMod = sizeModifier(props, "modifierHeight", "height");
+	if (heightMod) parts.push(heightMod);
 	if (props.modifierPadding != null) parts.push(`.padding(${props.modifierPadding}.dp)`);
 	if (props.modifierBackground != null) {
 		const hex = String(props.modifierBackground).replace(/^#/, "");

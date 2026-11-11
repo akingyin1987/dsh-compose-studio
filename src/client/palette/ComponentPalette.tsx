@@ -1,8 +1,9 @@
 // 组件面板（分类树 + 搜索 + 拖拽源）—— Dark Mode 设计
 import React, { useMemo, useState } from "react";
 import {
-	CATALOG,
+	PALETTE_GROUPS,
 	searchDescriptors,
+	findDescriptor,
 	type ComponentDescriptor,
 } from "./catalog.js";
 import { DND_MIME } from "../canvas/drag.js";
@@ -117,8 +118,8 @@ export function ComponentPalette() {
 						results.map((d) => <DescriptorItem key={d.id} descriptor={d} />)
 					)
 				) : (
-					CATALOG.map((cat) => (
-						<div key={cat.id} style={{ marginBottom: UI.space.md }}>
+					PALETTE_GROUPS.map((group) => (
+						<div key={group.id} style={{ marginBottom: UI.space.md }}>
 							<div
 								style={{
 									fontSize: 11,
@@ -129,11 +130,14 @@ export function ComponentPalette() {
 									letterSpacing: "0.04em",
 								}}
 							>
-								{cat.label}
+								{group.label}
 							</div>
-							{cat.children.map((d) => (
-								<DescriptorItem key={d.id} descriptor={d} />
-							))}
+							{group.descriptors.map((id) => {
+								const d = findDescriptor(id);
+								return d ? (
+									<DescriptorItem key={id} descriptor={d} />
+								) : null;
+							})}
 						</div>
 					))
 				)}
