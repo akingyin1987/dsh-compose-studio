@@ -4,6 +4,7 @@ dist/
 out/
 *.wasm
 *.js.map
+*.tgz
 
 # ---- Gradle / Kotlin ----
 .gradle/

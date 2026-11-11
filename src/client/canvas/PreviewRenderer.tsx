@@ -3,6 +3,7 @@
 import React from "react";
 import type { RenderNode } from "./Canvas.js";
 import { DND_MIME, axisOf, type DropTarget } from "./drag.js";
+import { studioDebug } from "../debug.js";
 
 // ===== M3 样式常量（近似 Material 3 基线风格） =====
 
@@ -130,6 +131,7 @@ export function PreviewNode({
 					e.stopPropagation();
 					e.dataTransfer.setData(DND_MIME, node.id);
 					e.dataTransfer.effectAllowed = "move";
+					studioDebug(`dragstart node ${node.id}`);
 				},
 		  }
 		: {}) as React.HTMLAttributes<HTMLElement>;

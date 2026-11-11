@@ -1,5 +1,5 @@
 // 画布与节点渲染（Dark Mode 设计；设备框模拟真实屏幕）
-import React, { useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { CanvasDocument, Node, ContainerNode, LeafNode } from "../../shared/document.js";
 import { isContainerNode } from "../../shared/document.js";
 import { getBuiltinDevice } from "../../shared/device.js";
@@ -17,6 +17,7 @@ import {
 	type DropTarget,
 } from "./drag.js";
 import { findDescriptor } from "../palette/catalog.js";
+import { studioDebug, STUDIO_DEBUG_EVENT } from "../debug.js";
 import { UI } from "../theme/ui.js";
 
 // ===== 渲染树（纯数据，可测试） =====
@@ -98,6 +99,15 @@ export function Canvas({
 
 	const frameRef = useRef<HTMLDivElement>(null);
 	const [dropIndicator, setDropIndicator] = useState<DropTarget | null>(null);
+	const [debugMsg, setDebugMsg] = useState<string>("");
+
+	// 调试总线（验证拖拽事件链路用）
+	useEffect(() => {
+		const onDebug = (e: Event): void =>
+			setDebugMsg((e as CustomEvent<string>).detail);
+		window.addEventListener(STUDIO_DEBUG_EVENT, onDebug);
+		return () => window.removeEventListener(STUDIO_DEBUG_EVENT, onDebug);
+	}, []);
 
 	const handleSelect = (id: string): void => {
 		dispatch({ type: "selection/set", ids: [id], anchorId: id });
@@ -124,7 +134,14 @@ export function Canvas({
 	};
 
 	const handleDragOver = (e: React.DragEvent): void => {
-		if (!e.dataTransfer.types.includes(DND_MIME)) return;
+		// 兼容 DOMStringList / FrozenArray（部分 Electron 环境无 includes）
+		const types = Array.from(e.dataTransfer.types ?? []);
+		const hitId =
+			(e.target as HTMLElement).closest("[data-node-id]")?.getAttribute(
+				"data-node-id",
+			) ?? "(frame)";
+		studioDebug(`dragover ${JSON.stringify(types)} @${hitId}`);
+		if (!types.includes(DND_MIME)) return;
 		e.preventDefault();
 		e.dataTransfer.dropEffect = "copy";
 		updateDropTarget(e);
@@ -140,10 +157,12 @@ export function Canvas({
 	};
 
 	const handleDrop = (e: React.DragEvent): void => {
-		if (!e.dataTransfer.types.includes(DND_MIME)) return;
+		const types = Array.from(e.dataTransfer.types ?? []);
+		if (!types.includes(DND_MIME)) return;
 		e.preventDefault();
 		const payload = e.dataTransfer.getData(DND_MIME);
 		const target = dropIndicator;
+		studioDebug(`drop ${JSON.stringify(payload)} → ${target ? `${target.parentId}[${target.index}]` : "none"}`);
 		setDropIndicator(null);
 		if (!payload) return;
 
@@ -188,6 +207,23 @@ export function Canvas({
 			}}
 			onClick={() => dispatch({ type: "selection/set", ids: [], anchorId: null })}
 		>
+			{/* 调试状态条（验证拖拽事件链路用；验证完成后移除） */}
+			{debugMsg && (
+				<div
+					style={{
+						margin: "0 auto 8px",
+						padding: "4px 10px",
+						background: UI.accentBg,
+						color: UI.accent,
+						fontSize: 11,
+						borderRadius: UI.radius.sm,
+						width: "fit-content",
+						maxWidth: "100%",
+					}}
+				>
+					{debugMsg}
+				</div>
+			)}
 			{/* 设备框（模拟真实屏幕） */}
 			<div
 				ref={frameRef}
