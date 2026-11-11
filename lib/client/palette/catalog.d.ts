@@ -7,7 +7,7 @@ export interface CodegenHint {
     wrapperTemplate?: string;
 }
 export interface PreviewSpec {
-    kind: "text" | "button" | "container" | "image" | "icon" | "field";
+    kind: "text" | "button" | "container" | "image" | "icon" | "field" | "progress" | "toggle" | "divider" | "card" | "appbar" | "navigation" | "dialog" | "tooltip" | "badge" | "tab" | "canvas" | "spacer" | "slider" | "chip";
     text?: string;
 }
 export interface ChildrenSchema {

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **dsh-compose-studio** 是 DSH（DeepSeek Harness，基于 Cordis 的插件化 Agent Harness）的客户端插件，在 DSH 界面内提供 Android Jetpack Compose 可视化拖拽编辑器（组件树 / 画布 / 属性面板三栏），支持 Material 3 主题配置与 LLM 辅助代码生成。
 
-当前处于 **Phase 1-B 进行中** 阶段（T9 完成）：插件骨架、TS 工具链、shared 契约层、客户端核心（store / palette / canvas / inspector）与拖拽编排均已落地，三栏编辑器可运行（React 占位渲染）。高保真预览（T10/T11）、代码生成（T12-T14）、持久化与 RPC（T15/T16）待实现。路线图见 `tasks/plan.md`，任务状态见 `tasks/todo.md`。
+当前处于 **Phase 1 收尾** 阶段（T1-T9b + T12-T16 完成）：插件骨架、TS 工具链、shared 契约层、客户端核心（store / palette / canvas / inspector）、拖拽编排、**组件目录（52 个，覆盖 Android 官网 Material 组件）**、代码生成（IR → Kotlin → 导出）、持久化与 RPC 均已落地。三栏编辑器可运行（React 占位渲染），生成的 Kotlin 代码可导出到工作区。高保真预览（T10/T11，Compose Web 真实渲染）待实现。路线图见 `tasks/plan.md`，任务状态见 `tasks/todo.md`。
 
 ## 常用命令
 
@@ -56,6 +56,17 @@ npm run build       # node build.mjs：tsc 生成 d.ts + esbuild 打包 JS
 ### 契约常量（lib/invariant.js）
 
 `RPC_PREFIX`、`PROTOCOL_VERSION`（破坏性变更时递增）、`MAIN_PANEL_ID`、`SLOT`、`RPC_METHOD`（源码 `src/shared/invariant.ts`）。设计文档中规划但代码未实现的 RPC 方法（`doc/load`、`doc/save`、`codegen/generate`、`llm/generate`、`theme/resolve`）已在 `RPC_METHOD` 中预留命名。
+
+### 代码生成与持久化（T12-T16 落地）
+
+- **IR**：`src/shared/ir.ts`（双半共享类型 `IrNode`/`IrAttr`/`IrValue`）。
+- **buildIr**：`src/server/codegen/ir.ts`（纯函数，树 walk；event 始终生成 TODO 占位；color `#RRGGBB` → literal，否则 → token）。
+- **render**：`src/server/codegen/render.ts`（纯函数，`GeneratedScreen` + slot 提取为 private 函数；事件提升为 `handle<Component><Event>` 唯一参数名；Column/Row spacing → `Arrangement.spacedBy`；`postProcess` 格式化）。
+- **export**：`src/server/codegen/export.ts`（写入 `.dsh-compose-studio/generated/<docId>/`；`overwrite=false` 存在报错；路径 fence）。
+- **存储**：`src/server/store/workspace.ts`（`resolveSafePath` fence）+ `repository.ts`（`DocumentRepository`：load/save/listDocs/listDir/exists/readFile/writeFile）。
+- **服务端 RPC**：`src/server/rpc.ts`（`doc/load`、`doc/save`、`doc/export`、`fs/list`、`ping`）+ `src/server/tools.ts`（`compose_studio_export`）。
+- **客户端 RPC**：`src/client/rpc.ts`（`RpcClient`）+ store 文档生命周期（`doc/new`、`doc/load`、`doc/rename`）+ index.tsx（debounce 1500ms 自动保存、新建/打开/导出、保存状态提示）。
+- **组件目录**：`src/client/palette/catalog.ts`（52 个：布局 8 + Material 3 40 + 内容 4），`PreviewRenderer.tsx` 支持全部占位渲染。
 
 ### 插件清单与挂载
 

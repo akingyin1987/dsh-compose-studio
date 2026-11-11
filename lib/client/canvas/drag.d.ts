@@ -13,7 +13,7 @@ export interface DropTarget {
     parentId: string;
     index: number;
 }
-/** 节点主轴（Row 水平，其余垂直）。 */
+/** 节点主轴（Row/FlowRow/LazyRow 水平，其余垂直）。 */
 export declare function axisOf(nodeType: string): Axis;
 /**
  * 计算插入 index：返回第一个中点超过指针位置的子元素下标。

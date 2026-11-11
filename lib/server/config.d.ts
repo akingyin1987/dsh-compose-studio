@@ -7,6 +7,8 @@ export declare const CONFIG_NAMESPACE = "compose-studio";
 export declare const ConfigSchema: Schema<Schemastery.ObjectS<NoInfer<{
     defaultDevice: Schema<string, string, "defined">;
     themePreset: Schema<string, string, "defined">;
+    /** 工作区根目录（空 = 进程 cwd）。文档与导出均限制在此目录内。 */
+    workspaceRoot: Schema<string, string, "defined">;
     codegen: Schema<Schemastery.ObjectS<NoInfer<{
         language: Schema<string, string, "defined">;
         composeBom: Schema<string, string, "defined">;
@@ -41,6 +43,8 @@ export declare const ConfigSchema: Schema<Schemastery.ObjectS<NoInfer<{
 }>>, Schemastery.ObjectT<NoInfer<{
     defaultDevice: Schema<string, string, "defined">;
     themePreset: Schema<string, string, "defined">;
+    /** 工作区根目录（空 = 进程 cwd）。文档与导出均限制在此目录内。 */
+    workspaceRoot: Schema<string, string, "defined">;
     codegen: Schema<Schemastery.ObjectS<NoInfer<{
         language: Schema<string, string, "defined">;
         composeBom: Schema<string, string, "defined">;

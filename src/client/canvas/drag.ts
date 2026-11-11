@@ -26,9 +26,15 @@ export interface DropTarget {
 	index: number;
 }
 
-/** 节点主轴（Row 水平，其余垂直）。 */
+/** 节点主轴（Row/FlowRow/LazyRow 水平，其余垂直）。 */
 export function axisOf(nodeType: string): Axis {
-	return nodeType === "layout.Row" ? "horizontal" : "vertical";
+	return (
+		nodeType === "layout.Row" ||
+		nodeType === "layout.FlowRow" ||
+		nodeType === "layout.LazyRow"
+	)
+		? "horizontal"
+		: "vertical";
 }
 
 /**

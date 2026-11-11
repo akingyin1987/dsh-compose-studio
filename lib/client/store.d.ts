@@ -97,9 +97,26 @@ export type Action = {
 } | {
     type: "history/redo";
     ts?: number;
+} | {
+    type: "doc/new";
+    docId: string;
+    name?: string;
+    ts?: number;
+} | {
+    type: "doc/load";
+    doc: CanvasDocument;
+    ts?: number;
+} | {
+    type: "doc/rename";
+    name: string;
+    ts?: number;
 };
 /** 创建初始状态（含示例文档：Scaffold > Column > [Text, Button]）。 */
 export declare function createInitialState(): StudioState;
+/** 创建空文档（根为 Scaffold）。 */
+export declare function createEmptyDocument(id: string, name?: string): CanvasDocument;
+/** 生成唯一文档 id。 */
+export declare function generateDocId(): string;
 export declare function pushHistory(undo: HistoryEntry[], entry: HistoryEntry): HistoryEntry[];
 export declare function reducer(state: StudioState, action: Action): StudioState;
 //# sourceMappingURL=store.d.ts.map

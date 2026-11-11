@@ -63,7 +63,11 @@ export type Action =
 	| { type: "device/set"; id: string; ts?: number }
 	| { type: "canvas/zoom"; zoom: number; ts?: number }
 	| { type: "history/undo"; ts?: number }
-	| { type: "history/redo"; ts?: number };
+	| { type: "history/redo"; ts?: number }
+	// 文档生命周期
+	| { type: "doc/new"; docId: string; name?: string; ts?: number }
+	| { type: "doc/load"; doc: CanvasDocument; ts?: number }
+	| { type: "doc/rename"; name: string; ts?: number };
 
 const now = (): number => Date.now();
 
@@ -111,6 +115,38 @@ export function createInitialState(): StudioState {
 		history: { undo: [], redo: [] },
 		ui: { leftWidth: 240, rightWidth: 320, inspectorTab: "props" },
 	};
+}
+
+/** 创建空文档（根为 Scaffold）。 */
+export function createEmptyDocument(
+	id: string,
+	name = "Untitled",
+): CanvasDocument {
+	const root: ContainerNode = {
+		id: "root",
+		type: "m3.Scaffold",
+		props: {},
+		children: [],
+	};
+	return {
+		version: 1,
+		id,
+		name,
+		createdAt: now(),
+		updatedAt: now(),
+		root,
+		nodes: { root },
+		theme: createDefaultTheme(),
+		devices: BUILTIN_DEVICES,
+		activeDeviceId: "phone",
+	};
+}
+
+/** 生成唯一文档 id。 */
+export function generateDocId(): string {
+	return `doc-${Date.now().toString(36)}-${Math.random()
+		.toString(36)
+		.slice(2, 8)}`;
 }
 
 /** 同步 root 引用（doc 操作后 root 对象可能变化）。 */
@@ -441,6 +477,27 @@ export function reducer(state: StudioState, action: Action): StudioState {
 			};
 			return applyWithoutHistory(base, entry.action);
 		}
+		case "doc/new": {
+			const doc = createEmptyDocument(action.docId, action.name);
+			return {
+				...state,
+				document: doc,
+				selection: { ids: [], anchorId: null },
+				history: { undo: [], redo: [] },
+			};
+		}
+		case "doc/load":
+			return {
+				...state,
+				document: action.doc,
+				selection: { ids: [], anchorId: null },
+				history: { undo: [], redo: [] },
+			};
+		case "doc/rename":
+			return {
+				...state,
+				document: { ...state.document, name: action.name },
+			};
 		default:
 			return state;
 	}

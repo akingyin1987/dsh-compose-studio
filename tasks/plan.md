@@ -69,13 +69,20 @@
 - [ ] T11: Canvas 接入 Compose Web 真实渲染
 
 ### Phase 1-D：代码生成
-- [ ] T12: codegen IR（buildIr）
-- [ ] T13: IR → Kotlin 渲染
-- [ ] T14: 导出工具与工作区写入
+- [x] T12: codegen IR（buildIr）
+- [x] T13: IR → Kotlin 渲染
+- [x] T14: 导出工具与工作区写入
 
 ### Phase 1-E：持久化与 RPC
-- [ ] T15: 服务端 RPC（doc/load、doc/save、fs/list）+ 文档存储
-- [ ] T16: 客户端自动保存与文档生命周期
+- [x] T15: 服务端 RPC（doc/load、doc/save、fs/list）+ 文档存储
+- [x] T16: 客户端自动保存与文档生命周期
+
+### 组件目录扩展（T6 补充，2026-11-11）
+- [x] 从 11 个扩展到 52 个（覆盖 Android 官网 Compose Material 组件清单）
+- [x] 布局 8（Column/Row/Box/Spacer/FlowRow/FlowColumn/LazyColumn/LazyRow）
+- [x] Material 3 40（Buttons 5/FAB 2/Card 3/Selection 4/Chip 2/Dialog/Divider 2/ListItem/Menu/Navigation 2/Progress 2/Snackbar/TabRow/TextField 2/TopAppBar/Badge/BottomSheet/Pickers 2/Tooltip/SegmentedButton/Surface/Scaffold/Text）
+- [x] 内容 4（Image/Icon/Canvas/BasicText）
+- [x] PreviewRenderer 支持全部 52 个组件的 React 占位渲染
 
 ### 后续阶段概要（不展开任务）
 - Phase 2：ThemePanel（M3 colorScheme/typography/shapes）、多设备预览、主题预设
@@ -92,6 +99,14 @@
 | CP4 | T10-T11 后 | 真实 M3 预览可演示，降级路径可用 |
 | CP5 | T12-T14 后 | 代码生成 → 导出闭环可演示 |
 | CP6 | T15-T16 后 | MVP 完成：编排 → 高保真预览 → 代码生成 → 持久化 |
+
+**检查点状态（2026-11-11）**：
+- [x] CP1：Phase 0 完成
+- [x] CP2：工具链与契约全绿
+- [x] CP3：可视化编排闭环（React 占位渲染，52 组件）
+- [ ] CP4：真实 M3 预览（T10/T11 待推进）
+- [x] CP5：代码生成 → 导出闭环（52 组件快照全绿）
+- [x] CP6：MVP 端到端闭环（编排 → 生成 → 导出 → 持久化）
 
 ## 6. 风险与缓解
 

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
 	reducer,
 	pushHistory,
+	createEmptyDocument,
+	generateDocId,
 	HISTORY_LIMIT,
 	MERGE_WINDOW_MS,
 	type StudioState,
@@ -314,5 +316,48 @@ describe("pushHistory", () => {
 		};
 		const result = pushHistory([entry1], entry2);
 		expect(result.length).toBe(2);
+	});
+});
+
+describe("文档生命周期", () => {
+	it("doc/new 创建空文档（根为 Scaffold）", () => {
+		const s = makeState();
+		const next = reducer(s, { type: "doc/new", docId: "new-doc", name: "New" });
+		expect(next.document.id).toBe("new-doc");
+		expect(next.document.name).toBe("New");
+		expect(next.document.root.type).toBe("m3.Scaffold");
+		expect(next.document.root.children).toEqual([]);
+		expect(next.selection.ids).toEqual([]);
+		expect(next.history.undo).toEqual([]);
+	});
+
+	it("doc/load 替换文档并清空选择/历史", () => {
+		const s = makeState();
+		const newDoc = createEmptyDocument("loaded", "Loaded");
+		const next = reducer(s, { type: "doc/load", doc: newDoc });
+		expect(next.document.id).toBe("loaded");
+		expect(next.selection.ids).toEqual([]);
+		expect(next.history.undo).toEqual([]);
+	});
+
+	it("doc/rename 更新文档名", () => {
+		const s = makeState();
+		const next = reducer(s, { type: "doc/rename", name: "Renamed" });
+		expect(next.document.name).toBe("Renamed");
+	});
+
+	it("generateDocId 生成唯一 id", () => {
+		const a = generateDocId();
+		const b = generateDocId();
+		expect(a).not.toBe(b);
+		expect(a).toMatch(/^doc-/);
+	});
+
+	it("createEmptyDocument 结构完整", () => {
+		const doc = createEmptyDocument("x", "X");
+		expect(doc.version).toBe(1);
+		expect(doc.root.id).toBe("root");
+		expect(doc.nodes.root).toEqual(doc.root);
+		expect(doc.devices.length).toBeGreaterThan(0);
 	});
 });

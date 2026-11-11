@@ -1,13 +1,14 @@
 // dsh-compose-studio —— 客户端入口
 // DSH 0.2.2：注册到 main slot（主面板，panel 系统），
 // 通过 ctx.layout.selectPanel(id) 切换（null = 会话）。
-import React, { useEffect, useReducer } from "react";
+import React, { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import type { ClientContext } from "@deepseek-ai/dsh-client-runtime/client";
-import { reducer, createInitialState } from "./store.js";
+import { reducer, createInitialState, generateDocId } from "./store.js";
 import { ComponentPalette } from "./palette/ComponentPalette.js";
 import { Canvas } from "./canvas/Canvas.js";
 import { Inspector } from "./inspector/Inspector.js";
 import { ChatPanel } from "./chat/ChatPanel.js";
+import { RpcClient } from "./rpc.js";
 import { UI } from "./theme/ui.js";
 
 // 扩充 SlotMap（与宿主 layout 插件声明一致）
@@ -47,6 +48,13 @@ const PANEL_ID = "composeStudio";
 // --- 三栏面板（内嵌主面板，带"返回会话"按钮） ---
 function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 	const [state, dispatch] = useReducer(reducer, null, createInitialState);
+	const rpc = useRef<RpcClient | null>(null);
+	if (!rpc.current) rpc.current = new RpcClient();
+	const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">(
+		"idle",
+	);
+	const firstRender = useRef(true);
+	const saveTimer = useRef<number | undefined>(undefined);
 
 	// 快捷键：Delete/Backspace 删除选中节点；Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y 撤销重做
 	useEffect(() => {
@@ -83,6 +91,71 @@ function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 		window.addEventListener("keydown", onKeyDown);
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [state.selection.anchorId, state.document.root.id]);
+
+	// 自动保存：编辑后 debounce 1500ms（首次渲染跳过）
+	useEffect(() => {
+		if (firstRender.current) {
+			firstRender.current = false;
+			return;
+		}
+		if (saveTimer.current !== undefined) {
+			window.clearTimeout(saveTimer.current);
+		}
+		setSaveState("idle");
+		saveTimer.current = window.setTimeout(() => {
+			setSaveState("saving");
+			rpc.current
+				?.saveDocument(state.document)
+				.then(() => setSaveState("saved"))
+				.catch((e) => {
+					console.error("自动保存失败", e);
+					setSaveState("error");
+				});
+		}, 1500);
+		return () => {
+			if (saveTimer.current !== undefined) {
+				window.clearTimeout(saveTimer.current);
+			}
+		};
+	}, [state.document]);
+
+	// 新建文档
+	const handleNew = useCallback(() => {
+		dispatch({
+			type: "doc/new",
+			docId: generateDocId(),
+			name: "Untitled",
+		});
+	}, []);
+
+	// 切换文档（输入 id 加载）
+	const handleLoad = useCallback(async () => {
+		const id = window.prompt("输入文档 id：");
+		if (!id) return;
+		try {
+			const doc = await rpc.current?.loadDocument(id);
+			if (doc) {
+				dispatch({ type: "doc/load", doc });
+				setSaveState("idle");
+			}
+		} catch (e) {
+			window.alert(`加载失败: ${e instanceof Error ? e.message : String(e)}`);
+		}
+	}, []);
+
+	// 导出 Kotlin 到工作区
+	const handleExport = useCallback(async () => {
+		try {
+			const files = await rpc.current?.exportDocument(state.document);
+			if (files) {
+				window.alert(
+					`导出 ${files.length} 个文件:\n${files.map((f) => f.path).join("\n")}`,
+				);
+			}
+		} catch (e) {
+			window.alert(`导出失败: ${e instanceof Error ? e.message : String(e)}`);
+		}
+	}, [state.document]);
 
 	return (
 		<div
@@ -136,8 +209,76 @@ function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 						<span style={{ fontSize: 14, fontWeight: 600 }}>
 							Compose Studio
 						</span>
-						{/* 撤销 / 重做 */}
+						{/* 保存状态 */}
+						<span
+							style={{
+								fontSize: 12,
+								color:
+									saveState === "error"
+										? UI.destructive
+										: saveState === "saving"
+											? UI.textMuted
+											: UI.textFaint,
+							}}
+						>
+							{saveState === "saving"
+								? "保存中…"
+								: saveState === "saved"
+									? "已保存"
+									: saveState === "error"
+										? "保存失败"
+										: ""}
+						</span>
+						{/* 文档操作 + 撤销 / 重做 */}
 						<div style={{ marginLeft: "auto", display: "flex", gap: UI.space.sm }}>
+							<button
+								onClick={handleNew}
+								title="新建文档"
+								style={{
+									border: `1px solid ${UI.border}`,
+									background: UI.surfaceAlt,
+									color: UI.text,
+									borderRadius: UI.radius.md,
+									padding: `${UI.space.xs}px ${UI.space.sm}px`,
+									fontSize: 13,
+									cursor: "pointer",
+									fontFamily: UI.fontSans,
+								}}
+							>
+								新建
+							</button>
+							<button
+								onClick={handleLoad}
+								title="打开文档"
+								style={{
+									border: `1px solid ${UI.border}`,
+									background: UI.surfaceAlt,
+									color: UI.text,
+									borderRadius: UI.radius.md,
+									padding: `${UI.space.xs}px ${UI.space.sm}px`,
+									fontSize: 13,
+									cursor: "pointer",
+									fontFamily: UI.fontSans,
+								}}
+							>
+								打开
+							</button>
+							<button
+								onClick={handleExport}
+								title="导出 Kotlin 到工作区"
+								style={{
+									border: `1px solid ${UI.border}`,
+									background: UI.surfaceAlt,
+									color: UI.text,
+									borderRadius: UI.radius.md,
+									padding: `${UI.space.xs}px ${UI.space.sm}px`,
+									fontSize: 13,
+									cursor: "pointer",
+									fontFamily: UI.fontSans,
+								}}
+							>
+								导出
+							</button>
 							<button
 								onClick={() => dispatch({ type: "history/undo" })}
 								disabled={state.history.undo.length === 0}

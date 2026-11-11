@@ -10,6 +10,8 @@ export const CONFIG_NAMESPACE = "compose-studio";
 export const ConfigSchema = Schema.object({
 	defaultDevice: Schema.string().default("phone"),
 	themePreset: Schema.string().default("material3"),
+	/** 工作区根目录（空 = 进程 cwd）。文档与导出均限制在此目录内。 */
+	workspaceRoot: Schema.string().default(""),
 	codegen: Schema.object({
 		language: Schema.string().default("kotlin"),
 		composeBom: Schema.string().default("2024.09.00"),

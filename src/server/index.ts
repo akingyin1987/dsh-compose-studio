@@ -7,8 +7,11 @@ import type { Context } from "@deepseek-ai/cordis";
 import "@deepseek-ai/dsh-host-webserver";
 import "@deepseek-ai/dsh-llm";
 import "@deepseek-ai/dsh-settings";
-import { RPC_PREFIX, PROTOCOL_VERSION, MAIN_PANEL_ID } from "../shared/invariant.js";
+import { RPC_PREFIX } from "../shared/invariant.js";
 import { ConfigSchema, type Config } from "./config.js";
+import { createStudioHandler } from "./rpc.js";
+import { DocumentRepository } from "./store/repository.js";
+import { defineExportTool } from "./tools.js";
 
 // 配置 schema（框架自动读取；可调参数统一暴露）
 export { ConfigSchema as Config };
@@ -19,8 +22,9 @@ export { ConfigSchema as Config };
  * @param config - 解析后的配置（由 ConfigSchema 校验）。
  */
 export function apply(ctx: Context, config: Config) {
-	void config;
 	// 注意：0.2.2 服务名列表无 "llm"（Phase 3 需要时调研正确服务名，可能是 "agents"）
+	const workspaceRoot = config.workspaceRoot || process.cwd();
+	const repository = new DocumentRepository(workspaceRoot);
 	ctx.inject(["tools", "webServer"], (child) => {
 		// --- 工具：打开可视化编辑器 ---
 		child.effect(
@@ -69,34 +73,20 @@ export function apply(ctx: Context, config: Config) {
 			"compose-studio: tool compose_studio_open",
 		);
 
-		// --- RPC 路由：/compose-studio/* ---
+		// --- 工具：导出 Kotlin 到工作区 ---
+		child.effect(
+			() =>
+				child.tools.register(defineExportTool(repository)),
+			"compose-studio: tool compose_studio_export",
+		);
+
+		// --- RPC 路由：/compose-studio/* （doc/load、doc/save、doc/export、fs/list、ping） ---
 		child.effect(
 			() =>
 				child.webServer.register({
 					kind: "prefix",
 					path: RPC_PREFIX,
-					handler: async (req, res) => {
-						const pathname = new URL(
-							req.url ?? "/",
-							"http://dsh.internal",
-						).pathname;
-						if (pathname === `${RPC_PREFIX}/ping`) {
-							res.writeHead(200, { "content-type": "application/json" });
-							res.end(
-								JSON.stringify({
-									ok: true,
-									protocol: PROTOCOL_VERSION,
-									panel: MAIN_PANEL_ID,
-									name: "dsh-compose-studio",
-								}),
-							);
-							return;
-						}
-						res.writeHead(404, {
-							"content-type": "text/plain; charset=utf-8",
-						});
-						res.end("not found");
-					},
+					handler: createStudioHandler(repository),
 				}),
 			"compose-studio: rpc",
 		);
