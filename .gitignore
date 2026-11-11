@@ -37,3 +37,6 @@ Thumbs.db
 
 # ---- Verify tools (local dependencies, not committed) ----
 spike/compose-web-hello/verify/react*.js
+
+# ---- Runtime artifacts (DSH Compose Studio workspace) ----
+.dsh-compose-studio/
