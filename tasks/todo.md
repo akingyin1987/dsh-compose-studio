@@ -432,6 +432,146 @@
 
 ---
 
+## 主题与模板（2026-11-11）
+
+### Task 17: 主题模型扩展（ThemeSpec 预设 + 色角色）
+
+**Description:** 在 `src/shared/theme.ts` 扩展主题模型：新增 6 套主题预设（紫/蓝/绿 × 浅色/深色）、`createThemeFromPreset`、`findMatchingPreset`、`getVariantPreset`，以及覆盖全部 33 个 colorScheme 字段的 `COLOR_ROLE_GROUPS`（供 ThemePanel 渲染配置表单）。
+
+**Acceptance criteria:**
+- [x] `THEME_PRESETS` 6 套，色板字段完整且为合法 `#RRGGBB`
+- [x] 浅色/深色成对（同 `baseId`），可互相切换
+- [x] `createDefaultTheme()` 与 `purple-light` 预设一致（向后兼容）
+- [x] `COLOR_ROLE_GROUPS` 覆盖全部字段且无重复
+- [x] `npm test` 全绿（theme.test.ts）
+
+**Verification:**
+- [x] Tests pass: `npm test`（shared/test/theme.test.ts）
+- [x] typecheck 通过
+
+**Dependencies:** None
+
+**Files likely touched:**
+- `src/shared/theme.ts`、`src/shared/test/theme.test.ts`
+
+**Estimated scope:** Medium
+
+---
+
+### Task 18: ThemePanel 与 Inspector 标签页
+
+**Description:** 新增 `src/client/theme/ThemePanel.tsx`：预设卡片选择、深色/浅色切换、按 `COLOR_ROLE_GROUPS` 分组的颜色配置表单；Inspector 增加「属性 / 主题」标签页（新 action `ui/setInspectorTab`）。`theme/update` 同时更新 `state.theme` 与 `document.theme`，保证预览 / 持久化 / 导出一致。
+
+**Acceptance criteria:**
+- [x] Inspector 顶部「属性 / 主题」标签可切换
+- [x] 主题标签页含实时预览条、6 套预设卡片、深色切换、全量 colorScheme 颜色编辑
+- [x] `theme/update` 同步 `document.theme`（单测断言）
+- [x] 切换深色优先匹配同色相族预设，无匹配时仅翻转 `dark` 标记
+- [x] `npm test` 全绿（store.test.ts 更新）
+
+**Verification:**
+- [x] Tests pass: `npm test`
+- [x] typecheck 通过
+- [ ] Manual check: 主题切换后画布 / 预览 / 导出同步变化（待 DSH 环境）
+
+**Dependencies:** Task 17
+
+**Files likely touched:**
+- `src/client/theme/ThemePanel.tsx`（新增）
+- `src/client/inspector/Inspector.tsx`（标签页）
+- `src/client/store.ts`（theme/update 同步、ui/setInspectorTab）
+- `src/client/test/store.test.ts`
+
+**Estimated scope:** Medium
+
+---
+
+### Task 19: 预览主题化（组件默认使用当前主题）
+
+**Description:** 新增 `src/client/theme/palette.ts`（`ThemeSpec` → `PreviewPalette`），PreviewRenderer 改为由色板生成 M3 样式（React Context 提供），全部 52 个组件占位渲染使用主题色；Canvas 设备框背景 / 网格跟随主题。
+
+**Acceptance criteria:**
+- [x] `PreviewPaletteContext` 提供当前主题色板，PreviewNode 消费
+- [x] Button / Text / Card / TopAppBar / TextField / Switch / Slider / Chip / Progress / Navigation / Dialog / Snackbar / Badge / Tab / Surface / Image / Icon / Scaffold 等全部使用主题色
+- [x] 设备框背景 = `colorScheme.background`，网格线使用主题 `outlineVariant`
+- [x] `withAlpha` 单测
+- [x] 既有测试无回归
+
+**Verification:**
+- [x] Tests pass: `npm test`（palette.test.ts + 既有 208 测试无回归）
+- [x] typecheck 通过
+- [ ] Manual check: 切换主题后画布所有组件颜色变化（待 DSH 环境）
+
+**Dependencies:** Task 18
+
+**Files likely touched:**
+- `src/client/theme/palette.ts`（新增）
+- `src/client/canvas/PreviewRenderer.tsx`
+- `src/client/canvas/Canvas.tsx`
+- `src/client/theme/test/palette.test.ts`（新增）
+
+**Estimated scope:** Medium
+
+---
+
+### Task 20: 代码生成注入主题
+
+**Description:** `GenerateOptions` 增加 `theme?: ThemeSpec`；新增 `src/server/codegen/theme.ts` 生成 `GeneratedColorScheme`（light/darkColorScheme）与 `GeneratedTheme` Composable；`render` 在提供主题时包裹 `GeneratedScreen` 内容；`exportDocument` 默认注入 `doc.theme`。生成的组件因此默认使用当前主题。
+
+**Acceptance criteria:**
+- [x] 提供 theme 时生成 `GeneratedTheme` + `lightColorScheme`/`darkColorScheme`
+- [x] `GeneratedScreen` 内容包裹在 `GeneratedTheme { ... }` 内
+- [x] 未提供 theme 时输出与之前完全一致（既有 52 快照无回归）
+- [x] `exportDocument` 默认注入文档主题，`generate.theme` 可覆盖
+- [x] colorScheme 覆盖全部 33 个色角色；`colorToKotlin` 处理 6/8 位 hex
+- [x] 快照 + 单测全绿
+
+**Verification:**
+- [x] Tests pass: `npm test`（theme.test.ts + export.test.ts 更新）
+- [x] typecheck / build 全绿
+- [ ] Manual check: 导出的 Kotlin 在 Android 项目中编译并应用主题（待验证）
+
+**Dependencies:** Task 17
+
+**Files likely touched:**
+- `src/shared/ir.ts`（GenerateOptions.theme）
+- `src/server/codegen/theme.ts`（新增）
+- `src/server/codegen/render.ts`、`src/server/codegen/export.ts`
+- `src/server/codegen/test/theme.test.ts`（新增）、`export.test.ts`
+
+**Estimated scope:** Medium
+
+---
+
+### Task 21: 页面模板库（登录 / 列表 / 设置等）
+
+**Description:** 新增 `src/client/templates.ts`：6 个常用页面模板（空白 / 登录 / 注册 / 列表 / 设置 / 个人资料），每个模板是纯函数 `(docId, name, theme) => CanvasDocument`；`doc/new` action 支持 `template` 字段；顶栏「新建」改为模板选择器（含「空白」）。
+
+**Acceptance criteria:**
+- [x] 模板覆盖空白 / 登录 / 注册 / 列表 / 设置 / 个人资料
+- [x] 每个模板产出文档通过完整不变式校验，且无孤立节点
+- [x] 模板文档继承当前主题
+- [x] 未知模板 id 回退空白（不抛错）
+- [x] 顶栏「新建 ▾」列出模板，点击创建对应文档
+- [x] 模板单测全绿
+
+**Verification:**
+- [x] Tests pass: `npm test`（templates.test.ts + store.test.ts 更新）
+- [x] typecheck / build 全绿
+- [ ] Manual check: 选择模板后画布正确渲染（待 DSH 环境）
+
+**Dependencies:** Task 18（主题继承）
+
+**Files likely touched:**
+- `src/client/templates.ts`（新增）
+- `src/client/index.tsx`（模板选择器）
+- `src/client/store.ts`（doc/new template）
+- `src/client/test/templates.test.ts`（新增）
+
+**Estimated scope:** Medium
+
+---
+
 ## 检查点
 
 ### Checkpoint CP1（T1-T2 后）：Phase 0 完成

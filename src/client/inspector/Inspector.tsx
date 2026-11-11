@@ -5,6 +5,7 @@ import { getSizeMode } from "../../shared/document.js";
 import type { StudioState, Action } from "../store.js";
 import { findDescriptor } from "../palette/catalog.js";
 import { UI } from "../theme/ui.js";
+import { ThemePanel } from "../theme/ThemePanel.js";
 
 // ===== PropField 字段组件 =====
 
@@ -347,7 +348,7 @@ export function getPropSchemas(
 
 // ===== Inspector 面板 =====
 
-export function Inspector({
+function PropsPanel({
 	state,
 	dispatch,
 }: {
@@ -441,4 +442,74 @@ export function Inspector({
 			)}
 		</div>
 	);
+}
+
+// ===== Inspector 面板（属性 / 主题 标签页） =====
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: `${UI.space.sm}px ${UI.space.md}px`,
+        border: "none",
+        borderBottom: active ? `2px solid ${UI.primary}` : "2px solid transparent",
+        background: "transparent",
+        color: active ? UI.text : UI.textMuted,
+        fontSize: 13,
+        fontWeight: active ? 600 : 400,
+        cursor: "pointer",
+        fontFamily: UI.fontSans,
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+export function Inspector({
+  state,
+  dispatch,
+}: {
+  state: StudioState;
+  dispatch: (action: Action) => void;
+}) {
+  const tab = state.ui.inspectorTab;
+  return (
+    <div style={{ fontFamily: UI.fontSans }}>
+      <div
+        style={{
+          display: "flex",
+          padding: `0 ${UI.space.xs}px`,
+          borderBottom: `1px solid ${UI.border}`,
+        }}
+      >
+        <TabButton
+          active={tab === "props"}
+          onClick={() => dispatch({ type: "ui/setInspectorTab", tab: "props" })}
+        >
+          属性
+        </TabButton>
+        <TabButton
+          active={tab === "theme"}
+          onClick={() => dispatch({ type: "ui/setInspectorTab", tab: "theme" })}
+        >
+          主题
+        </TabButton>
+      </div>
+      {tab === "theme" ? (
+        <ThemePanel state={state} dispatch={dispatch} />
+      ) : (
+        <PropsPanel state={state} dispatch={dispatch} />
+      )}
+    </div>
+  );
 }

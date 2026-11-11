@@ -1,5 +1,6 @@
 // 代码生成 IR（docs/design.md 5.6；双半共享，客户端预览 T11 也使用）
 // 注意：此文件不得引入 Node 或浏览器专有 API。
+import type { ThemeSpec } from "./theme.js";
 
 /** 中间表示节点（代码生成的抽象语法树）。 */
 export interface IrNode {
@@ -40,6 +41,8 @@ export interface GenerateOptions {
   usePreviewAnnotation: boolean;
   addModifierDefault: boolean;
   minify: boolean;
+  /** 文档主题；提供时生成 GeneratedTheme 并包裹屏幕，使组件默认使用当前主题。 */
+  theme?: ThemeSpec;
 }
 
 export interface FileOutput {

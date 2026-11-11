@@ -11,7 +11,7 @@ import {
 	type HistoryEntry,
 } from "../store.js";
 import type { CanvasDocument, ContainerNode, Node } from "../../shared/document.js";
-import { createDefaultTheme } from "../../shared/theme.js";
+import { createDefaultTheme, createThemeFromPreset } from "../../shared/theme.js";
 import { BUILTIN_DEVICES } from "../../shared/device.js";
 
 function makeState(overrides?: Partial<StudioState>): StudioState {
@@ -137,7 +137,7 @@ describe("reducer 文档操作", () => {
 		expect(next.selection).toEqual({ ids: ["a", "b"], anchorId: "a" });
 	});
 
-	it("theme/update 深合并", () => {
+	it("theme/update 深合并并同步到文档", () => {
 		const s = makeState();
 		const next = reducer(s, {
 			type: "theme/update",
@@ -147,6 +147,8 @@ describe("reducer 文档操作", () => {
 		expect(next.theme.colorScheme.primary).toBe("#000000");
 		// 未修改的字段保留
 		expect(next.theme.colorScheme.secondary).toBeDefined();
+		// 文档级主题同步（持久化 / 导出使用）
+		expect(next.document.theme).toEqual(next.theme);
 	});
 
 	it("device/set 与 canvas/zoom", () => {
@@ -340,6 +342,42 @@ describe("文档生命周期", () => {
 		expect(next.history.undo).toEqual([]);
 	});
 
+	it("doc/load 以文档主题为准", () => {
+		const s = makeState();
+		const newDoc = createEmptyDocument("loaded", "Loaded");
+		newDoc.theme = createThemeFromPreset("blue-dark");
+		const next = reducer(s, { type: "doc/load", doc: newDoc });
+		expect(next.theme.dark).toBe(true);
+		expect(next.theme.colorScheme.primary).toBe("#9ECAFF");
+	});
+
+	it("doc/new 支持模板", () => {
+		const s = makeState();
+		const next = reducer(s, {
+			type: "doc/new",
+			docId: "tpl-doc",
+			name: "登录",
+			template: "login",
+		});
+		expect(next.document.id).toBe("tpl-doc");
+		expect(next.document.name).toBe("登录");
+		const types = Object.values(next.document.nodes).map((n) => n.type);
+		expect(types).toContain("m3.OutlinedTextField");
+		expect(types).toContain("m3.Button");
+		// 继承当前主题
+		expect(next.document.theme).toEqual(next.theme);
+	});
+
+	it("doc/new 未知模板回退空白", () => {
+		const s = makeState();
+		const next = reducer(s, {
+			type: "doc/new",
+			docId: "tpl-unknown",
+			template: "nope",
+		});
+		expect(next.document.root.children).toEqual([]);
+	});
+
 	it("doc/rename 更新文档名", () => {
 		const s = makeState();
 		const next = reducer(s, { type: "doc/rename", name: "Renamed" });
@@ -368,5 +406,12 @@ describe("文档生命周期", () => {
 		expect(next.ui.showBorders).toBe(false);
 		const back = reducer(next, { type: "ui/toggleBorders" });
 		expect(back.ui.showBorders).toBe(true);
+	});
+
+	it("ui/setInspectorTab 切换属性/主题面板", () => {
+		const s = makeState();
+		expect(s.ui.inspectorTab).toBe("props");
+		const next = reducer(s, { type: "ui/setInspectorTab", tab: "theme" });
+		expect(next.ui.inspectorTab).toBe("theme");
 	});
 });

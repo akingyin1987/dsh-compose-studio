@@ -96,8 +96,17 @@
 - [x] 修复 modifier 背景被组件默认背景覆盖（样式顺序）
 - [x] 事件参数名唯一化（handle<Component><Event>，避免重复）
 
+### 主题与模板（2026-11-11）
+- [x] 主题模型扩展：6 套预设（紫/蓝/绿 × 浅色/深色）+ 33 个 colorScheme 色角色分组（`src/shared/theme.ts`）
+- [x] ThemePanel + Inspector「属性 / 主题」标签页（预设卡片 / 深色切换 / 颜色配置）
+- [x] `theme/update` 同步 `state.theme` 与 `document.theme`（预览 / 持久化 / 导出一致）
+- [x] 预览主题化：PreviewPalette + Context，52 个组件默认使用当前主题；设备框背景跟随主题
+- [x] 代码生成注入主题：`GeneratedColorScheme` + `GeneratedTheme`，`exportDocument` 默认注入 `doc.theme`
+- [x] 页面模板库：空白 / 登录 / 注册 / 列表 / 设置 / 个人资料，顶栏「新建 ▾」模板选择器
+- [x] 测试：新增 theme / palette / templates / codegen-theme 测试，共 249 passed；既有快照无回归
+
 ### 后续阶段概要（不展开任务）
-- Phase 2：ThemePanel（M3 colorScheme/typography/shapes）、多设备预览、主题预设
+- Phase 2：多设备预览；主题 typography / shapes 编辑（colorScheme 已支持）
 - Phase 3：`compose_studio_generate` 工具 + 流式 UI + prompt 工程 + 结构化输出
 - Phase 4：文档迁移、完整测试、性能、可访问性、发布
 
@@ -111,6 +120,7 @@
 | CP4 | T10-T11 后 | 真实 M3 预览可演示，降级路径可用 |
 | CP5 | T12-T14 后 | 代码生成 → 导出闭环可演示 |
 | CP6 | T15-T16 后 | MVP 完成：编排 → 高保真预览 → 代码生成 → 持久化 |
+| CP7 | T17-T21 后 | 主题选择/配置全链路（预览 + 导出）+ 常用模板可用 |
 
 **检查点状态（2026-11-11）**：
 - [x] CP1：Phase 0 完成
@@ -119,6 +129,7 @@
 - [ ] CP4：真实 M3 预览（T10/T11 待推进）
 - [x] CP5：代码生成 → 导出闭环（52 组件快照全绿）
 - [x] CP6：MVP 端到端闭环（编排 → 生成 → 导出 → 持久化）
+- [x] CP7：主题预设/配置 + 模板库（249 tests，typecheck/build 全绿；DSH 手动演示待做）
 
 ## 6. 风险与缓解
 

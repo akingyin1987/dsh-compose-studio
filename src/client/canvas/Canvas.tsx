@@ -4,7 +4,8 @@ import type { CanvasDocument, Node, ContainerNode, LeafNode } from "../../shared
 import { isContainerNode } from "../../shared/document.js";
 import { getBuiltinDevice } from "../../shared/device.js";
 import type { StudioState, Action } from "../store.js";
-import { PreviewNode } from "./PreviewRenderer.js";
+import { PreviewNode, PreviewPaletteContext } from "./PreviewRenderer.js";
+import { createPreviewPalette, withAlpha } from "../theme/palette.js";
 import {
 	DND_MIME,
 	axisOf,
@@ -96,6 +97,8 @@ export function Canvas({
 	const activeDevice = getBuiltinDevice(device.activeId);
 	const widthDp = activeDevice?.widthDp ?? 360;
 	const heightDp = activeDevice?.heightDp ?? 800;
+	// 主题色板：预览组件与设备框背景均来自当前主题
+	const palette = useMemo(() => createPreviewPalette(state.theme), [state.theme]);
 
 	const frameRef = useRef<HTMLDivElement>(null);
 	const [dropIndicator, setDropIndicator] = useState<DropTarget | null>(null);
@@ -239,24 +242,26 @@ export function Canvas({
 					margin: "0 auto",
 					display: "flex",
 					flexDirection: "column",
-					background: "#FFFFFF",
+					background: palette.background,
 					borderRadius: UI.radius.xl,
 					boxShadow: UI.shadow.lg,
 					border: `1px solid ${UI.border}`,
 					padding: UI.space.md,
 					boxSizing: "border-box",
 					backgroundImage: device.showGrid
-						? "linear-gradient(#f1f5f9 1px, transparent 1px), linear-gradient(90deg, #f1f5f9 1px, transparent 1px)"
+						? `linear-gradient(${withAlpha(palette.outlineVariant, "1F")} 1px, transparent 1px), linear-gradient(90deg, ${withAlpha(palette.outlineVariant, "1F")} 1px, transparent 1px)`
 						: "none",
 					backgroundSize: "20px 20px",
 				}}
 			>
-				<PreviewNode
-					node={tree}
-					onSelect={handleSelect}
-					dropIndicator={dropIndicator}
-					showBorders={state.ui.showBorders}
-				/>
+				<PreviewPaletteContext.Provider value={palette}>
+					<PreviewNode
+						node={tree}
+						onSelect={handleSelect}
+						dropIndicator={dropIndicator}
+						showBorders={state.ui.showBorders}
+					/>
+				</PreviewPaletteContext.Provider>
 			</div>
 		</div>
 	);

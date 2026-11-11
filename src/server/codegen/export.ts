@@ -34,6 +34,8 @@ export async function exportDocument(
 	const outputs: FileOutput[] = render(ir, {
 		...DEFAULT_GENERATE_OPTIONS,
 		...opts.generate,
+		// 文档主题始终注入，使生成的组件默认使用当前主题
+		theme: opts.generate?.theme ?? doc.theme,
 	});
 	const baseDir = opts.targetDir ?? `.dsh-compose-studio/generated/${doc.id}`;
 	const files: ExportedFile[] = [];

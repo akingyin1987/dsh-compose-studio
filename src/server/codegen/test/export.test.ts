@@ -5,7 +5,7 @@ import * as path from "node:path";
 import { exportDocument } from "../export.js";
 import { DocumentRepository, STUDIO_DIR } from "../../store/repository.js";
 import type { CanvasDocument, ContainerNode } from "../../../shared/document.js";
-import { createDefaultTheme } from "../../../shared/theme.js";
+import { createDefaultTheme, createThemeFromPreset } from "../../../shared/theme.js";
 import { BUILTIN_DEVICES } from "../../../shared/device.js";
 
 const tempDirs: string[] = [];
@@ -112,5 +112,29 @@ describe("exportDocument", () => {
 		expect(content).toContain("package com.example.test");
 		expect(content).toContain("import androidx.compose.material3.Scaffold");
 		expect(content).toContain("import androidx.compose.material3.Text");
+	});
+
+	it("导出默认注入文档主题（GeneratedTheme）", async () => {
+		const dir = await makeTempDir();
+		const repo = new DocumentRepository(dir);
+		const doc = makeDoc();
+		doc.theme = createThemeFromPreset("purple-dark");
+		const files = await exportDocument(repo, doc);
+		expect(files).toHaveLength(1);
+		const content = await repo.readFile(files[0].path);
+		expect(content).toContain("GeneratedTheme");
+		expect(content).toContain("darkColorScheme(");
+		expect(content).toContain("primary = Color(0xFFD0BCFF)");
+	});
+
+	it("generate.theme 覆盖文档主题", async () => {
+		const dir = await makeTempDir();
+		const repo = new DocumentRepository(dir);
+		const files = await exportDocument(repo, makeDoc(), {
+			generate: { theme: createThemeFromPreset("green-light") },
+		});
+		const content = await repo.readFile(files[0].path);
+		expect(content).toContain("lightColorScheme(");
+		expect(content).toContain("primary = Color(0xFF2E7D32)");
 	});
 });

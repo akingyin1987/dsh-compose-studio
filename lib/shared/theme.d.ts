@@ -69,6 +69,36 @@ export interface ThemeSpec {
         extraLarge: number;
     };
 }
-/** 默认浅色主题（占位值，Phase 2 完善）。 */
+export interface ThemePreset {
+    id: string;
+    /** 展示名（如「紫色 · 浅色」）。 */
+    name: string;
+    description: string;
+    /** 色相族标识（用于浅色/深色互相切换时匹配同族预设）。 */
+    baseId: string;
+    dark: boolean;
+    colorScheme: ThemeSpec["colorScheme"];
+}
+export declare const THEME_PRESETS: ThemePreset[];
+export declare function getThemePreset(id: string): ThemePreset | undefined;
+/** 由色板 + 明暗构造完整主题。 */
+export declare function createTheme(dark: boolean, colorScheme: ThemeSpec["colorScheme"]): ThemeSpec;
+/** 由预设 id 构造主题（未知 id 回退默认浅色）。 */
+export declare function createThemeFromPreset(id: string): ThemeSpec;
+/** 默认主题（紫色 · 浅色）。 */
 export declare function createDefaultTheme(): ThemeSpec;
+/** 判断主题是否与某预设完全一致（用于高亮当前预设）。 */
+export declare function findMatchingPreset(theme: ThemeSpec): ThemePreset | undefined;
+/** 同色相族的深色 / 浅色对应预设。 */
+export declare function getVariantPreset(preset: ThemePreset, dark: boolean): ThemePreset | undefined;
+export interface ColorRole {
+    key: keyof ThemeSpec["colorScheme"];
+    label: string;
+}
+export interface ColorRoleGroup {
+    id: string;
+    label: string;
+    roles: ColorRole[];
+}
+export declare const COLOR_ROLE_GROUPS: ColorRoleGroup[];
 //# sourceMappingURL=theme.d.ts.map
