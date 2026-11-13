@@ -137,7 +137,7 @@
 |---|---|---|
 | Compose Multiplatform 镜像仅 1.9.0 可用 | 高 | 锁定 1.9.0；生产环境自建缓存 |
 | Gradle 堆不足导致 IR 编译 OOM | 中 | `gradle.properties` 已设 `-Xmx4g`，勿调低 |
-| Compose Web 文本渲染缺字体解析器 | 中 | T10 验收含 `LocalFontFamilyResolver` |
+| Compose Web 文本渲染缺字体解析器 | **高（已确认）** | T10 前置验证（2026-11-13）实测：M3 `Text` 抛 `LocalFontFamilyResolver not present`；T10 须先提供自定义 resolver 或改渲染路径 |
 | React overlay 与 Compose 渲染命中偏差 | 中 | 命中以文档模型几何为准（overlay 自绘） |
 | 宿主依赖（`@deepseek-ai/*`）解析方式未确认 | 中 | T3 验证 `inject` 机制；必要时补 peerDependencies |
 | DSH Slot 契约随版本变动 | 中 | 契约集中 `shared/contract.ts`，`PROTOCOL_VERSION` 版本化 |

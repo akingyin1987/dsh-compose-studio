@@ -263,6 +263,15 @@
 - [ ] `renderPreview` 渲染真实 M3 组件到指定 DOM 容器
 - [ ] 文本渲染正常（字体解析器工作，无 `LocalFontFamilyResolver` 异常）
 
+**前置验证（2026-11-13，T10 启动前）：**
+- [x] M3 编译验证：`material3-js` 1.9.0 成功打包（259 KiB），构建产物 JS 1.58 MB + WASM 8.4 MB
+- [x] M3 运行时验证：**确认阻塞性问题** —— headless Chrome 加载 `MaterialTheme { Text(...) }` 抛
+  `Uncaught Error: CompositionLocal LocalFontFamilyResolver not present`，root 未挂载
+- [ ] **T10 必须先解决字体解析器**：CMP 1.9.0 Web 目标未提供 `LocalFontFamilyResolver`，
+  需提供自定义实现（或改用不依赖 Compose 字体的渲染路径），否则真实 M3 渲染不可用
+- 验证工具：`spike/compose-web-hello/verify/m3-check.html`（`python -m http.server` + headless Chrome，
+  见文件内说明；结果写入 `document.body.dataset.m3`）
+
 **Verification:**
 - [ ] Build succeeds: `cd preview-runtime && gradle jsBrowserProductionWebpack --no-daemon`
 - [ ] Manual check: 浏览器中挂载渲染
