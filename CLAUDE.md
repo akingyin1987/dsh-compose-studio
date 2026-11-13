@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 **dsh-compose-studio** 是 DSH（DeepSeek Harness，基于 Cordis 的插件化 Agent Harness）的客户端插件，在 DSH 界面内提供 Android Jetpack Compose 可视化拖拽编辑器（组件树 / 画布 / 属性面板三栏），支持 Material 3 主题配置与 LLM 辅助代码生成。
 
-当前处于 **Phase 1 收尾** 阶段（T1-T9b + T12-T16 完成）：插件骨架、TS 工具链、shared 契约层、客户端核心（store / palette / canvas / inspector）、拖拽编排、**组件目录（52 个，覆盖 Android 官网 Material 组件）**、代码生成（IR → Kotlin → 导出）、持久化与 RPC 均已落地。三栏编辑器可运行（React 占位渲染），生成的 Kotlin 代码可导出到工作区。高保真预览（T10/T11，Compose Web 真实渲染）待实现。路线图见 `tasks/plan.md`，任务状态见 `tasks/todo.md`。
+当前处于 **Phase 1 收尾** 阶段（T1-T9b + T12-T16 + T17-T21 完成）：插件骨架、TS 工具链、shared 契约层、客户端核心（store / palette / canvas / inspector）、拖拽编排、**组件目录（52 个，覆盖 Android 官网 Material 组件）**、代码生成（IR → Kotlin → 导出）、持久化与 RPC、**主题系统（预设 + colorScheme 配置，预览与导出全链路生效）**、**页面模板库（空白/登录/注册/列表/设置/个人资料）** 均已落地。三栏编辑器可运行（React 占位渲染），生成的 Kotlin 代码可导出到工作区。高保真预览（T10/T11，Compose Web 真实渲染）待实现。路线图见 `tasks/plan.md`，任务状态见 `tasks/todo.md`。
 
 ## 常用命令
 
@@ -68,6 +68,12 @@ npm run build       # node build.mjs：tsc 生成 d.ts + esbuild 打包 JS
 - **客户端 RPC**：`src/client/rpc.ts`（`RpcClient`）+ store 文档生命周期（`doc/new`、`doc/load`、`doc/rename`）+ index.tsx（debounce 1500ms 自动保存、新建/打开/导出、保存状态提示）。
 - **组件目录**：`src/client/palette/catalog.ts`（52 个：布局 8 + Material 3 40 + 内容 4），`PreviewRenderer.tsx` 支持全部占位渲染；`PALETTE_GROUPS` 按功能分组（按钮/选择/文本/输入/容器/导航/标签/进度/反馈/列表/内容）；Button 变体含可编辑 `text` 属性（Inspector 编辑 → codegen 生成 `Text(text=...)` 内容）。
 - **UI 交互优化**（2026-11-11）：Modifier 尺寸模式（fixed/wrap/match/weight，`props.modifier*Mode`）；Column/Row arrangement/alignment（`verticalArrangement`/`horizontalAlignment` 等枚举）；容器边界虚线（`ui.showBorders` 开关，默认开）；Scaffold 按槽渲染（topBar/bottomBar/fab/content）；设备框固定 `height` 避免塌缩。
+- **主题与模板**（T17-T21，2026-11-11）：
+  - `src/shared/theme.ts`：6 套 `THEME_PRESETS`（紫/蓝/绿 × 浅色/深色）+ `COLOR_ROLE_GROUPS`（33 个 colorScheme 色角色）+ `createThemeFromPreset` / `findMatchingPreset` / `getVariantPreset`。
+  - `src/client/theme/ThemePanel.tsx`：Inspector「主题」标签页（预设卡片 / 深色切换 / 颜色配置）；`theme/update` 同步 `state.theme` 与 `document.theme`。
+  - `src/client/theme/palette.ts` + `PreviewPaletteContext`：PreviewRenderer 全量组件使用主题色；Canvas 设备框背景 / 网格跟随主题。
+  - codegen：`GenerateOptions.theme` → `GeneratedColorScheme`（light/darkColorScheme）+ `GeneratedTheme`，`exportDocument` 默认注入 `doc.theme`（未提供 theme 时输出不变，快照无回归）。
+  - `src/client/templates.ts`：6 个页面模板（纯函数 `(docId, name, theme) => CanvasDocument`）；`doc/new` 支持 `template`；顶栏「新建 ▾」模板选择器。
 
 ### 插件清单与挂载
 

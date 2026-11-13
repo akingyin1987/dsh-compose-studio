@@ -1,3 +1,4 @@
+import type { ThemeSpec } from "./theme.js";
 /** 中间表示节点（代码生成的抽象语法树）。 */
 export interface IrNode {
     /** Composable 函数名，如 "Button"。 */
@@ -42,6 +43,8 @@ export interface GenerateOptions {
     usePreviewAnnotation: boolean;
     addModifierDefault: boolean;
     minify: boolean;
+    /** 文档主题；提供时生成 GeneratedTheme 并包裹屏幕，使组件默认使用当前主题。 */
+    theme?: ThemeSpec;
 }
 export interface FileOutput {
     path: string;

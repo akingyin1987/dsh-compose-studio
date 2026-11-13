@@ -1,18 +1,30 @@
 // M3 风格 React 模拟渲染（降级预览，docs/design.md 6.6 降级策略）
 // Phase 1 先用 React 模拟 Compose 外观；T10/T11 替换为 Compose Web 真实渲染。
 // 覆盖 catalog 全部 52 个组件。
-import React from "react";
+import React, { useContext } from "react";
 import type { RenderNode } from "./Canvas.js";
 import { DND_MIME, axisOf, getModifierStyle, type DropTarget } from "./drag.js";
 import { studioDebug } from "../debug.js";
+import { createDefaultTheme } from "../../shared/theme.js";
+import {
+	createPreviewPalette,
+	withAlpha,
+	type PreviewPalette,
+} from "../theme/palette.js";
 
-// ===== M3 样式常量（近似 Material 3 基线风格） =====
+/** 预览色板 Context：Canvas 提供，PreviewNode 消费（主题变化时整树重绘）。 */
+export const PreviewPaletteContext = React.createContext<PreviewPalette>(
+	createPreviewPalette(createDefaultTheme()),
+);
 
-const M3 = {
+// ===== M3 样式（由主题色板生成，组件默认使用当前主题） =====
+
+function createM3Styles(p: PreviewPalette) {
+	return {
 	text: (size = 14, weight = 400): React.CSSProperties => ({
 		fontSize: size,
 		fontWeight: weight,
-		color: "#1C1B1F",
+		color: p.onSurface,
 		lineHeight: 1.4,
 	}),
 	button: (variant: string = "filled"): React.CSSProperties => {
@@ -36,19 +48,23 @@ const M3 = {
 			case "filled":
 				return {
 					...base,
-					background: "#6750A4",
-					color: "#FFFFFF",
+					background: p.primary,
+					color: p.onPrimary,
 					boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
 				};
 			// Filled tonal：secondaryContainer 背景 + onSecondaryContainer 文字
 			case "tonal":
-				return { ...base, background: "#E8DEF8", color: "#1D192B" };
+				return {
+					...base,
+					background: p.secondaryContainer,
+					color: p.onSecondaryContainer,
+				};
 			// Elevated：surface 背景 + primary 文字 + 明显阴影
 			case "elevated":
 				return {
 					...base,
-					background: "#F7F2FA",
-					color: "#6750A4",
+					background: p.surfaceContainerLow,
+					color: p.primary,
 					boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
 				};
 			// Outlined：透明 + outline 边框 + primary 文字（中等强调）
@@ -56,65 +72,70 @@ const M3 = {
 				return {
 					...base,
 					background: "transparent",
-					color: "#6750A4",
-					border: "1px solid #79747E",
+					color: p.primary,
+					border: `1px solid ${p.outline}`,
 				};
 			// Text：透明 + primary 文字（低强调）
 			case "text":
 				return {
 					...base,
 					background: "transparent",
-					color: "#6750A4",
+					color: p.primary,
 					padding: "0 12px",
 				};
 			default:
 				return {
 					...base,
-					background: "#6750A4",
-					color: "#FFFFFF",
+					background: p.primary,
+					color: p.onPrimary,
 					boxShadow: "0 1px 2px rgba(0,0,0,0.15)",
 				};
 		}
 	},
 	card: (variant: string = "filled"): React.CSSProperties => ({
 		borderRadius: 12,
-		border: variant === "outlined" ? "1px solid #79747E" : "1px solid #E7E0EC",
-		background: variant === "elevated" ? "#F7F2FA" : "#FFFBFE",
+		border:
+			variant === "outlined"
+				? `1px solid ${p.outline}`
+				: `1px solid ${p.outlineVariant}`,
+		background: variant === "elevated" ? p.surfaceContainerLow : p.surface,
 		padding: 12,
 		boxShadow: variant === "elevated" ? "0 1px 3px rgba(0,0,0,0.15)" : undefined,
 	}),
 	topBar: {
 		height: 56,
-		background: "#FFFBFE",
-		borderBottom: "1px solid #E7E0EC",
+		background: p.surface,
+		borderBottom: `1px solid ${p.outlineVariant}`,
 		display: "flex",
 		alignItems: "center",
 		padding: "0 16px",
 		fontSize: 20,
 		fontWeight: 500,
+		color: p.onSurface,
 	},
 	textField: (outlined = false): React.CSSProperties => ({
-		border: outlined ? "1px solid #79747E" : "none",
-		borderBottom: outlined ? undefined : "1px solid #79747E",
+		border: outlined ? `1px solid ${p.outline}` : "none",
+		borderBottom: outlined ? undefined : `1px solid ${p.outline}`,
 		borderRadius: outlined ? 4 : 0,
 		padding: "10px 12px",
 		fontSize: 14,
-		background: "#fff",
+		background: p.surfaceContainerHighest,
+		color: p.onSurface,
 		minWidth: 160,
 	}),
 	image: {
-		background: "#E7E0EC",
+		background: p.surfaceVariant,
 		borderRadius: 4,
 		display: "flex",
 		alignItems: "center",
 		justifyContent: "center",
-		color: "#49454F",
+		color: p.onSurfaceVariant,
 		fontSize: 12,
 	},
 	icon: {
 		width: 24,
 		height: 24,
-		color: "#49454F",
+		color: p.onSurfaceVariant,
 		display: "inline-flex",
 		alignItems: "center",
 		justifyContent: "center",
@@ -125,71 +146,74 @@ const M3 = {
 		flexDirection: "column" as const,
 		height: "100%",
 		minHeight: "100%",
-		background: "#FFFBFE",
+		background: p.background,
+		color: p.onBackground,
 	},
 	surface: {
 		borderRadius: 12,
 		padding: 12,
-		background: "#F7F2FA",
+		background: p.surfaceContainer,
 	},
-	divider: { background: "#CAC4D0" },
+	divider: { background: p.outlineVariant },
 	toggle: (checked: boolean): React.CSSProperties => ({
 		width: 18,
 		height: 18,
 		borderRadius: checked ? 9 : 2,
-		background: checked ? "#6750A4" : "transparent",
-		border: "2px solid #79747E",
+		background: checked ? p.primary : "transparent",
+		border: `2px solid ${checked ? p.primary : p.outline}`,
 		display: "inline-flex",
 		alignItems: "center",
 		justifyContent: "center",
-		color: "#fff",
+		color: p.onPrimary,
 		fontSize: 12,
 	}),
 	slider: (value: number): React.CSSProperties => ({
 		flex: 1,
 		height: 4,
 		borderRadius: 2,
-		background: `linear-gradient(to right, #6750A4 ${value}%, #E7E0EC ${value}%)`,
+		background: `linear-gradient(to right, ${p.primary} ${value}%, ${p.surfaceVariant} ${value}%)`,
 		position: "relative" as const,
 	}),
 	chip: (selected = false): React.CSSProperties => ({
 		padding: "4px 12px",
 		borderRadius: 8,
 		fontSize: 12,
-		background: selected ? "#E8DEF8" : "transparent",
-		border: "1px solid #79747E",
+		background: selected ? p.secondaryContainer : "transparent",
+		border: `1px solid ${p.outline}`,
 		display: "inline-flex",
 		alignItems: "center",
+		color: p.onSurface,
 	}),
 	progress: (value: number, linear = false): React.CSSProperties =>
 		linear
-			? { height: 4, borderRadius: 2, background: `linear-gradient(to right, #6750A4 ${value}%, #E7E0EC ${value}%)` }
-			: { width: 36, height: 36, borderRadius: "50%", background: `conic-gradient(#6750A4 ${value * 3.6}deg, #E7E0EC 0deg)` },
+			? { height: 4, borderRadius: 2, background: `linear-gradient(to right, ${p.primary} ${value}%, ${p.surfaceVariant} ${value}%)` }
+			: { width: 36, height: 36, borderRadius: "50%", background: `conic-gradient(${p.primary} ${value * 3.6}deg, ${p.surfaceVariant} 0deg)` },
 	navigation: (vertical = false): React.CSSProperties => ({
 		display: "flex",
 		flexDirection: (vertical ? "column" : "row") as "column" | "row",
 		gap: 8,
 		padding: 8,
-		background: "#F3EDF7",
+		background: p.surfaceContainer,
 	}),
 	dialog: {
 		position: "fixed" as const,
 		top: "50%",
 		left: "50%",
 		transform: "translate(-50%, -50%)",
-		background: "#FFFBFE",
+		background: p.surfaceContainerHigh,
 		borderRadius: 28,
 		padding: 24,
 		minWidth: 280,
 		boxShadow: "0 4px 24px rgba(0,0,0,0.2)",
+		color: p.onSurface,
 	},
 	tooltip: {
 		position: "fixed" as const,
 		bottom: 20,
 		left: "50%",
 		transform: "translateX(-50%)",
-		background: "#313033",
-		color: "#fff",
+		background: p.inverseSurface,
+		color: p.inverseOnSurface,
 		padding: "6px 12px",
 		borderRadius: 4,
 		fontSize: 12,
@@ -198,8 +222,8 @@ const M3 = {
 		minWidth: 20,
 		height: 20,
 		borderRadius: 10,
-		background: "#B3261E",
-		color: "#fff",
+		background: p.error,
+		color: p.onError,
 		fontSize: 11,
 		display: "inline-flex",
 		alignItems: "center",
@@ -210,28 +234,28 @@ const M3 = {
 		padding: "8px 16px",
 		fontSize: 14,
 		fontWeight: active ? 600 : 400,
-		color: active ? "#6750A4" : "#49454F",
-		borderBottom: active ? "2px solid #6750A4" : "2px solid transparent",
+		color: active ? p.primary : p.onSurfaceVariant,
+		borderBottom: active ? `2px solid ${p.primary}` : "2px solid transparent",
 	}),
 	canvas: {
-		background: "#F7F2FA",
+		background: p.surfaceContainer,
 		borderRadius: 4,
-		border: "1px dashed #CAC4D0",
+		border: `1px dashed ${p.outlineVariant}`,
 		display: "flex",
 		alignItems: "center",
 		justifyContent: "center",
-		color: "#79747E",
+		color: p.onSurfaceVariant,
 		fontSize: 12,
 	},
-	spacer: { background: "rgba(103,80,164,0.08)", borderRadius: 2 },
+	spacer: { background: withAlpha(p.primary, "14"), borderRadius: 2 },
 	listItem: {
 		display: "flex",
 		flexDirection: "column" as const,
 		padding: "12px 16px",
-		borderBottom: "1px solid #E7E0EC",
+		borderBottom: `1px solid ${p.outlineVariant}`,
 	},
 	menu: {
-		background: "#FFFBFE",
+		background: p.surfaceContainerHigh,
 		borderRadius: 4,
 		boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
 		padding: 8,
@@ -242,15 +266,26 @@ const M3 = {
 		bottom: 16,
 		left: 16,
 		right: 16,
-		background: "#313033",
-		color: "#fff",
+		background: p.inverseSurface,
+		color: p.inverseOnSurface,
 		padding: "12px 16px",
 		borderRadius: 4,
 		fontSize: 14,
 		display: "flex",
 		justifyContent: "space-between",
 	},
-};
+	containerPlaceholder: {
+		border: `1px dashed ${p.outlineVariant}`,
+		borderRadius: 4,
+		padding: "12px 16px",
+		color: p.onSurfaceVariant,
+		fontSize: 12,
+		textAlign: "center",
+		width: "100%",
+		boxSizing: "border-box",
+	} as React.CSSProperties,
+	};
+}
 
 /** 排列值 → CSS justifyContent。 */
 function arrangementCss(value: unknown): string {
@@ -296,29 +331,18 @@ function indicatorStyle(nodeType: string): React.CSSProperties {
 		: { width: 2, alignSelf: "stretch", background: "#1976d2", borderRadius: 1, flexShrink: 0 };
 }
 
-/** 空容器占位提示样式。 */
-const containerPlaceholder: React.CSSProperties = {
-	border: "1px dashed #CAC4D0",
-	borderRadius: 4,
-	padding: "12px 16px",
-	color: "#79747E",
-	fontSize: 12,
-	textAlign: "center",
-	width: "100%",
-	boxSizing: "border-box",
-};
-
 /** 容器最小高度（空容器可见、可拖放）。 */
 const CONTAINER_MIN_HEIGHT = 60;
 
-/** 渲染容器子节点（空时显示占位）。 */
+/** 渲染容器子节点（空时显示占位；占位样式来自主题色板）。 */
 function renderContainerChildren(
 	node: RenderNode,
 	childrenContent: React.ReactNode,
+	m3: ReturnType<typeof createM3Styles>,
 	label: string,
 ): React.ReactNode {
 	if (node.children.length === 0) {
-		return <div style={containerPlaceholder}>{label}</div>;
+		return <div style={m3.containerPlaceholder}>{label}</div>;
 	}
 	return childrenContent;
 }
@@ -367,6 +391,9 @@ export function PreviewNode({
 	const isRoot = node.depth === 0;
 	const selected = node.selected;
 	const modStyle = getModifierStyle(node.props);
+	// 主题色板：所有组件默认颜色来自当前主题
+	const palette = useContext(PreviewPaletteContext);
+	const m3 = createM3Styles(palette);
 
 	// 容器边界：选中实线；否则 showBorders 虚线（-1 offset 内缩，不占布局）
 	const containerOutline =
@@ -451,7 +478,7 @@ export function PreviewNode({
 					}}
 					onClick={handleClick}
 				>
-					{renderContainerChildren(node, childrenContent, "Column（拖拽组件到此处）")}
+					{renderContainerChildren(node, childrenContent, m3, "Column（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.Row":
@@ -469,7 +496,7 @@ export function PreviewNode({
 					}}
 					onClick={handleClick}
 				>
-					{renderContainerChildren(node, childrenContent, "Row（拖拽组件到此处）")}
+					{renderContainerChildren(node, childrenContent, m3, "Row（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.FlowRow":
@@ -480,7 +507,7 @@ export function PreviewNode({
 					style={{ ...wrapperStyle, display: "flex", flexWrap: "wrap", gap: Number(node.props.spacing ?? 8), alignItems: "center", minHeight: CONTAINER_MIN_HEIGHT }}
 					onClick={handleClick}
 				>
-					{renderContainerChildren(node, childrenContent, "FlowRow（拖拽组件到此处）")}
+					{renderContainerChildren(node, childrenContent, m3, "FlowRow（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.FlowColumn":
@@ -491,7 +518,7 @@ export function PreviewNode({
 					style={{ ...wrapperStyle, display: "flex", flexDirection: "column", flexWrap: "wrap", gap: Number(node.props.spacing ?? 8), minHeight: CONTAINER_MIN_HEIGHT }}
 					onClick={handleClick}
 				>
-					{renderContainerChildren(node, childrenContent, "FlowColumn（拖拽组件到此处）")}
+					{renderContainerChildren(node, childrenContent, m3, "FlowColumn（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.LazyColumn":
@@ -502,7 +529,7 @@ export function PreviewNode({
 					style={{ ...wrapperStyle, display: "flex", flexDirection: "column", gap: Number(node.props.spacing ?? 8), overflow: "auto", minHeight: CONTAINER_MIN_HEIGHT }}
 					onClick={handleClick}
 				>
-					{renderContainerChildren(node, childrenContent, "LazyColumn（拖拽组件到此处）")}
+					{renderContainerChildren(node, childrenContent, m3, "LazyColumn（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.LazyRow":
@@ -513,7 +540,7 @@ export function PreviewNode({
 					style={{ ...wrapperStyle, display: "flex", gap: Number(node.props.spacing ?? 8), overflow: "auto", minHeight: CONTAINER_MIN_HEIGHT }}
 					onClick={handleClick}
 				>
-					{renderContainerChildren(node, childrenContent, "LazyRow（拖拽组件到此处）")}
+					{renderContainerChildren(node, childrenContent, m3, "LazyRow（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.Box":
@@ -524,7 +551,7 @@ export function PreviewNode({
 					style={{ ...wrapperStyle, minHeight: CONTAINER_MIN_HEIGHT, position: "relative" }}
 					onClick={handleClick}
 				>
-					{renderContainerChildren(node, childrenContent, "Box（拖拽组件到此处）")}
+					{renderContainerChildren(node, childrenContent, m3, "Box（拖拽组件到此处）")}
 				</div>
 			);
 		case "layout.Spacer":
@@ -534,7 +561,7 @@ export function PreviewNode({
 					{...dragProps}
 					style={{
 						...wrapperStyle,
-						...M3.spacer,
+						...m3.spacer,
 						width: Number(spacerProps.width ?? 0),
 						height: Number(spacerProps.height ?? 8),
 						flexShrink: 0,
@@ -552,7 +579,7 @@ export function PreviewNode({
 					<div
 						{...nodeAttrs}
 						{...dragProps}
-						style={{ ...wrapperStyle, ...M3.text(Number(node.props.fontSize ?? 14), Number(node.props.fontWeight ?? 400)) }}
+						style={{ ...wrapperStyle, ...m3.text(Number(node.props.fontSize ?? 14), Number(node.props.fontWeight ?? 400)) }}
 						onClick={handleClick}
 					>
 						{String(node.props.text ?? node.text ?? "Text")}
@@ -570,7 +597,7 @@ export function PreviewNode({
 					<button
 						{...nodeAttrs}
 						{...dragProps}
-						style={{ ...M3.button(variant), ...wrapperStyle }}
+						style={{ ...m3.button(variant), ...wrapperStyle }}
 						onClick={(e) => {
 							e.stopPropagation();
 							onSelect(node.id);
@@ -608,7 +635,7 @@ export function PreviewNode({
 					<button
 						{...nodeAttrs}
 						{...dragProps}
-						style={{ ...wrapperStyle, width: node.type === "m3.ExtendedFloatingActionButton" ? undefined : 56, height: 56, borderRadius: 16, border: "none", background: "#E8DEF8", color: "#6750A4", cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.15)", padding: node.type === "m3.ExtendedFloatingActionButton" ? "0 16px" : 0 }}
+						style={{ ...wrapperStyle, width: node.type === "m3.ExtendedFloatingActionButton" ? undefined : 56, height: 56, borderRadius: 16, border: "none", background: palette.primaryContainer, color: palette.onPrimaryContainer, cursor: "pointer", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, boxShadow: "0 2px 8px rgba(0,0,0,0.15)", padding: node.type === "m3.ExtendedFloatingActionButton" ? "0 16px" : 0 }}
 						onClick={(e) => {
 							e.stopPropagation();
 							onSelect(node.id);
@@ -623,7 +650,7 @@ export function PreviewNode({
 			case "m3.OutlinedCard": {
 				const variant = CARD_VARIANTS[node.type] ?? "filled";
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...M3.card(variant), ...wrapperStyle }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...m3.card(variant), ...wrapperStyle }} onClick={handleClick}>
 						{childrenContent}
 					</div>
 				);
@@ -632,36 +659,36 @@ export function PreviewNode({
 			case "m3.Checkbox":
 				return (
 					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, display: "flex", alignItems: "center", gap: 8 }} onClick={handleClick}>
-						<div style={M3.toggle(Boolean(node.props.checked))}>
+						<div style={m3.toggle(Boolean(node.props.checked))}>
 							{Boolean(node.props.checked) ? "✓" : ""}
 						</div>
-						<span style={M3.text(14)}>{String(node.props.label ?? "")}</span>
+						<span style={m3.text(14)}>{String(node.props.label ?? "")}</span>
 					</div>
 				);
 
 			case "m3.RadioButton":
 				return (
 					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, display: "flex", alignItems: "center", gap: 8 }} onClick={handleClick}>
-						<div style={{ ...M3.toggle(Boolean(node.props.selected)), borderRadius: "50%" }} />
-						<span style={M3.text(14)}>{String(node.props.label ?? "")}</span>
+						<div style={{ ...m3.toggle(Boolean(node.props.selected)), borderRadius: "50%" }} />
+						<span style={m3.text(14)}>{String(node.props.label ?? "")}</span>
 					</div>
 				);
 
 			case "m3.Switch":
 				return (
 					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, display: "flex", alignItems: "center", gap: 8 }} onClick={handleClick}>
-						<div style={{ width: 52, height: 32, borderRadius: 16, background: Boolean(node.props.checked) ? "#6750A4" : "#E7E0EC", position: "relative", transition: "background 0.2s" }}>
-							<div style={{ width: 24, height: 24, borderRadius: "50%", background: "#fff", position: "absolute", top: 4, left: Boolean(node.props.checked) ? 24 : 4, boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
+						<div style={{ width: 52, height: 32, borderRadius: 16, background: Boolean(node.props.checked) ? palette.primary : palette.surfaceVariant, position: "relative", transition: "background 0.2s" }}>
+							<div style={{ width: 24, height: 24, borderRadius: "50%", background: palette.onPrimary, position: "absolute", top: 4, left: Boolean(node.props.checked) ? 24 : 4, boxShadow: "0 1px 3px rgba(0,0,0,0.2)" }} />
 						</div>
-						<span style={M3.text(14)}>{String(node.props.label ?? "")}</span>
+						<span style={m3.text(14)}>{String(node.props.label ?? "")}</span>
 					</div>
 				);
 
 			case "m3.Slider":
 				return (
 					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, display: "flex", alignItems: "center", gap: 12, padding: "0 8px" }} onClick={handleClick}>
-						<div style={M3.slider(Number(node.props.value ?? 50))} />
-						<span style={M3.text(12)}>{String(node.props.value ?? 50)}</span>
+						<div style={m3.slider(Number(node.props.value ?? 50))} />
+						<span style={m3.text(12)}>{String(node.props.value ?? 50)}</span>
 					</div>
 				);
 
@@ -669,7 +696,7 @@ export function PreviewNode({
 			case "m3.FilterChip":
 				return (
 					<div {...nodeAttrs} {...dragProps} style={wrapperStyle} onClick={handleClick}>
-						<span style={M3.chip(Boolean(node.props.selected))}>
+						<span style={m3.chip(Boolean(node.props.selected))}>
 							{String(node.props.label ?? "Chip")}
 							{node.type === "m3.FilterChip" ? " ✓" : ""}
 						</span>
@@ -678,55 +705,55 @@ export function PreviewNode({
 
 			case "m3.AlertDialog":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.dialog }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.dialog }} onClick={handleClick}>
 						<div style={{ fontSize: 20, fontWeight: 500, marginBottom: 12 }}>
 							{String(node.props.title ?? "Dialog")}
 						</div>
-						<div style={M3.text(14)}>{String(node.props.text ?? "")}</div>
+						<div style={m3.text(14)}>{String(node.props.text ?? "")}</div>
 						<div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 20 }}>
-							<button style={M3.button("text")}>Cancel</button>
-							<button style={M3.button("filled")}>OK</button>
+							<button style={m3.button("text")}>Cancel</button>
+							<button style={m3.button("filled")}>OK</button>
 						</div>
 					</div>
 				);
 
 			case "m3.HorizontalDivider":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.divider, height: Number(node.props.thickness ?? 1), width: "100%" }} onClick={handleClick} />
+					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.divider, height: Number(node.props.thickness ?? 1), width: "100%" }} onClick={handleClick} />
 				);
 
 			case "m3.VerticalDivider":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.divider, width: Number(node.props.thickness ?? 1), alignSelf: "stretch" }} onClick={handleClick} />
+					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.divider, width: Number(node.props.thickness ?? 1), alignSelf: "stretch" }} onClick={handleClick} />
 				);
 
 			case "m3.ListItem":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.listItem }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.listItem }} onClick={handleClick}>
 						<span style={{ fontSize: 16, fontWeight: 500 }}>{String(node.props.headline ?? "List item")}</span>
 						{Boolean(node.props.supporting) && (
-							<span style={M3.text(12)}>{String(node.props.supporting)}</span>
+							<span style={m3.text(12)}>{String(node.props.supporting)}</span>
 						)}
 					</div>
 				);
 
 			case "m3.DropdownMenu":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.menu }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.menu }} onClick={handleClick}>
 						{childrenContent}
 					</div>
 				);
 
 			case "m3.NavigationBar":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.navigation(false) }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.navigation(false) }} onClick={handleClick}>
 						{childrenContent}
 					</div>
 				);
 
 			case "m3.NavigationRail":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.navigation(true) }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.navigation(true) }} onClick={handleClick}>
 						{childrenContent}
 					</div>
 				);
@@ -736,24 +763,24 @@ export function PreviewNode({
 				const linear = node.type === "m3.LinearProgressIndicator";
 				return (
 					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, display: "flex", alignItems: "center", padding: 8 }} onClick={handleClick}>
-						<div style={M3.progress(Number(node.props.progress ?? 50), linear)} />
+						<div style={m3.progress(Number(node.props.progress ?? 50), linear)} />
 					</div>
 				);
 			}
 
 			case "m3.Snackbar":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.snackbar }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.snackbar }} onClick={handleClick}>
 						<span>{String(node.props.message ?? "Snackbar")}</span>
 						{Boolean(node.props.actionLabel) && (
-							<span style={{ color: "#D0BCFF", fontWeight: 500 }}>{String(node.props.actionLabel)}</span>
+							<span style={{ color: palette.inversePrimary, fontWeight: 500 }}>{String(node.props.actionLabel)}</span>
 						)}
 					</div>
 				);
 
 			case "m3.TabRow":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, display: "flex", borderBottom: "1px solid #E7E0EC" }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, display: "flex", borderBottom: `1px solid ${palette.outlineVariant}` }} onClick={handleClick}>
 						{childrenContent}
 					</div>
 				);
@@ -764,7 +791,7 @@ export function PreviewNode({
 				return (
 					<div {...nodeAttrs} {...dragProps} style={wrapperStyle} onClick={handleClick}>
 						<input
-							style={M3.textField(outlined)}
+							style={m3.textField(outlined)}
 							placeholder={String(node.props.label ?? "TextField")}
 							readOnly
 						/>
@@ -774,7 +801,7 @@ export function PreviewNode({
 
 			case "m3.TopAppBar":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.topBar }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.topBar }} onClick={handleClick}>
 						{String(node.props.title ?? "Title")}
 					</div>
 				);
@@ -783,13 +810,13 @@ export function PreviewNode({
 				return (
 					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, display: "inline-flex", alignItems: "center", gap: 4 }} onClick={handleClick}>
 						{childrenContent}
-						<span style={M3.badge}>1</span>
+						<span style={m3.badge}>1</span>
 					</div>
 				);
 
 			case "m3.ModalBottomSheet":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.card("elevated"), position: "fixed", bottom: 0, left: 0, right: 0, borderRadius: "16px 16px 0 0", boxShadow: "0 -2px 16px rgba(0,0,0,0.2)" }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.card("elevated"), position: "fixed", bottom: 0, left: 0, right: 0, borderRadius: "16px 16px 0 0", boxShadow: "0 -2px 16px rgba(0,0,0,0.2)" }} onClick={handleClick}>
 						{childrenContent}
 					</div>
 				);
@@ -799,7 +826,7 @@ export function PreviewNode({
 				return (
 					<div {...nodeAttrs} {...dragProps} style={wrapperStyle} onClick={handleClick}>
 						<input
-							style={M3.textField(true)}
+							style={m3.textField(true)}
 							placeholder={node.type === "m3.DatePicker" ? "Select date" : "Select time"}
 							readOnly
 						/>
@@ -808,14 +835,14 @@ export function PreviewNode({
 
 			case "m3.PlainTooltip":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.tooltip }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.tooltip }} onClick={handleClick}>
 						{String(node.props.text ?? "Tooltip")}
 					</div>
 				);
 
 			case "m3.Surface":
 				return (
-					<div {...nodeAttrs} {...dragProps} style={{ ...M3.surface, background: String(node.props.color ?? "#F7F2FA"), ...wrapperStyle }} onClick={handleClick}>
+					<div {...nodeAttrs} {...dragProps} style={{ ...m3.surface, background: String(node.props.color ?? palette.surfaceContainer), ...wrapperStyle }} onClick={handleClick}>
 						{childrenContent}
 					</div>
 				);
@@ -834,7 +861,7 @@ export function PreviewNode({
 					(n) => !isTopBar(n) && !isBottomBar(n) && !isFab(n),
 				);
 				const slotStyle: React.CSSProperties = {
-					border: "1px dashed #E7E0EC",
+					border: `1px dashed ${palette.outlineVariant}`,
 					borderRadius: 4,
 					minHeight: 44,
 					padding: 4,
@@ -845,7 +872,7 @@ export function PreviewNode({
 				): React.ReactNode => (
 					<div style={slotStyle}>
 						{nodes.length === 0 ? (
-							<div style={containerPlaceholder}>{label}</div>
+							<div style={m3.containerPlaceholder}>{label}</div>
 						) : (
 							nodes.map((n) => (
 								<PreviewNode
@@ -864,7 +891,7 @@ export function PreviewNode({
 						{...dragProps}
 						style={{
 							...wrapperStyle,
-							...M3.scaffold,
+							...m3.scaffold,
 							minHeight: "100%",
 							position: "relative",
 						}}
@@ -899,14 +926,14 @@ export function PreviewNode({
 			const w = Number(node.props.width ?? 100);
 			const h = Number(node.props.height ?? 100);
 			return (
-				<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.image, width: w, height: h }} onClick={handleClick}>
+				<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.image, width: w, height: h }} onClick={handleClick}>
 					Image
 				</div>
 			);
 		}
 		case "content.Icon":
 			return (
-				<span {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.icon }} onClick={handleClick}>
+				<span {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.icon }} onClick={handleClick}>
 					{String(node.props.name ?? "star") === "star" ? "★" : String(node.props.name ?? "★")}
 				</span>
 			);
@@ -915,7 +942,7 @@ export function PreviewNode({
 				<div
 					{...nodeAttrs}
 					{...dragProps}
-					style={{ ...wrapperStyle, ...M3.canvas, width: Number(node.props.width ?? 200), height: Number(node.props.height ?? 200) }}
+					style={{ ...wrapperStyle, ...m3.canvas, width: Number(node.props.width ?? 200), height: Number(node.props.height ?? 200) }}
 					onClick={handleClick}
 				>
 					Canvas
@@ -923,7 +950,7 @@ export function PreviewNode({
 			);
 		case "content.BasicText":
 			return (
-				<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...M3.text() }} onClick={handleClick}>
+				<div {...nodeAttrs} {...dragProps} style={{ ...wrapperStyle, ...m3.text() }} onClick={handleClick}>
 					{String(node.props.text ?? "Basic")}
 				</div>
 			);

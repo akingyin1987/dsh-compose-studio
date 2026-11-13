@@ -1029,10 +1029,11 @@ export function reducer(state: StudioState, action: Action): StudioState;
 
 ### Phase 2 — 主题与多端（1~2 周）
 
-- [ ] ThemePanel：M3 colorScheme / typography / shapes 编辑。
-- [ ] 实时主题预览（token 解析）。
-- [ ] 多设备预览：手机 / 平板 / CMP，可切换、缩放、网格。
-- [ ] 主题预设（light/dark/brand）。
+- [x] ThemePanel：M3 colorScheme 编辑（typography / shapes 待补）。
+- [x] 实时主题预览（React 占位渲染已主题化；Compose Web 见 T10/T11）。
+- [ ] 多设备预览：手机 / 平板 / CMP，可切换、缩放、网格（切换/缩放已实现）。
+- [x] 主题预设（light/dark × 紫/蓝/绿）。
+- [x] 页面模板库（空白 / 登录 / 注册 / 列表 / 设置 / 个人资料）。
 
 ### Phase 3 — LLM 辅助（2~3 周）
 

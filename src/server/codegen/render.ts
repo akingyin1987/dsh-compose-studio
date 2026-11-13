@@ -9,6 +9,12 @@ import type {
 	FileOutput,
 } from "../../shared/ir.js";
 import { DEFAULT_GENERATE_OPTIONS } from "../../shared/ir.js";
+import {
+	THEME_IMPORTS_LIGHT,
+	THEME_IMPORTS_DARK,
+	renderColorScheme,
+	renderThemeComposable,
+} from "./theme.js";
 
 interface RenderContext {
 	options: GenerateOptions;
@@ -39,18 +45,47 @@ export function render(
 		ctx.imports.add("androidx.compose.ui.Alignment");
 	}
 
+	// 主题：提供时引入 colorScheme / GeneratedTheme，并包裹屏幕内容
+	const theme = options.theme;
+	if (theme) {
+		for (const imp of theme.dark ? THEME_IMPORTS_DARK : THEME_IMPORTS_LIGHT) {
+			ctx.imports.add(imp);
+		}
+	}
+
 	const lines: string[] = [
 		header(),
 		`package ${options.packageName}`,
 		"",
 		...[...ctx.imports].sort().map((i) => `import ${i}`),
 		"",
+	];
+
+	if (theme) {
+		lines.push(
+			"/**",
+			" * Generated color scheme（由 dsh-compose-studio 主题生成）。",
+			" */",
+			...renderColorScheme(theme),
+			"",
+			...renderThemeComposable(),
+			"",
+		);
+	}
+
+	lines.push(
 		...kdoc(ir),
 		"@Composable",
 		"fun GeneratedScreen(modifier: Modifier = Modifier) {",
-		...renderNode(ir, ctx, { isRoot: true, indent: 1 }),
-		"}",
-	];
+	);
+	if (theme) {
+		lines.push("    GeneratedTheme {");
+		lines.push(...renderNode(ir, ctx, { isRoot: true, indent: 2 }));
+		lines.push("    }");
+	} else {
+		lines.push(...renderNode(ir, ctx, { isRoot: true, indent: 1 }));
+	}
+	lines.push("}");
 
 	for (const fn of ctx.extracted) {
 		lines.push("");

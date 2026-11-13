@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+	<meta charset="utf-8">
+	<title>M3 运行时验证</title>
+	<style>
+		body { margin: 0; font-family: system-ui, sans-serif; background: #f0f2f5; }
+		#root { width: 420px; height: 260px; background: #fff; border: 1px solid #d0d0d0; margin: 24px; }
+		#log { margin: 24px; font-family: ui-monospace, monospace; font-size: 12px; white-space: pre-wrap; }
+	</style>
+</head>
+<body>
+	<div id="root"></div>
+	<div id="log">loading...</div>
+
+	<script>
+		const logEl = document.getElementById('log');
+		const errors = [];
+		window.onerror = (msg, src, line, col, err) => {
+			errors.push(String(msg));
+			logEl.textContent = 'ERRORS:\n' + errors.join('\n---\n');
+			document.body.dataset.m3 = 'error';
+		};
+		window.addEventListener('unhandledrejection', (e) => {
+			errors.push('unhandledrejection: ' + String(e.reason));
+			logEl.textContent = 'ERRORS:\n' + errors.join('\n---\n');
+			document.body.dataset.m3 = 'error';
+		});
+		window.addEventListener('error', (e) => {
+			errors.push('error: ' + String(e.message));
+			logEl.textContent = 'ERRORS:\n' + errors.join('\n---\n');
+			document.body.dataset.m3 = 'error';
+		});
+	</script>
+	<script src="../build/kotlin-webpack/js/productionExecutable/compose-web-hello.js"></script>
+	<script>
+		// 等待 Compose 挂载后检查
+		let attempts = 0;
+		const timer = setInterval(() => {
+			attempts += 1;
+			const root = document.getElementById('root');
+			const hasText = root && root.textContent && root.textContent.includes('M3 Text');
+			const hasButton = root && root.querySelector('button');
+			if (hasText || hasButton || attempts > 60) {
+				clearInterval(timer);
+				if (errors.length > 0) {
+					document.body.dataset.m3 = 'error';
+				} else if (hasText && hasButton) {
+					document.body.dataset.m3 = 'pass';
+					logEl.textContent = 'PASS: M3 Text + Button 渲染成功\nroot.textContent=' + JSON.stringify(root.textContent);
+				} else {
+					document.body.dataset.m3 = 'fail';
+					logEl.textContent = 'FAIL: 渲染未完成\nroot.innerHTML=' + root.innerHTML.slice(0, 500);
+				}
+			}
+		}, 100);
+	</script>
+</body>
+</html>

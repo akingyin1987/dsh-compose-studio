@@ -4,6 +4,7 @@ import { isContainerNode } from "../shared/document.js";
 import type { ThemeSpec } from "../shared/theme.js";
 import { createDefaultTheme } from "../shared/theme.js";
 import { BUILTIN_DEVICES } from "../shared/device.js";
+import { buildTemplateDocument, getTemplate } from "./templates.js";
 
 export const HISTORY_LIMIT = 100;
 export const MERGE_WINDOW_MS = 800;
@@ -71,10 +72,11 @@ export type Action =
 	| { type: "history/undo"; ts?: number }
 	| { type: "history/redo"; ts?: number }
 	// 文档生命周期
-	| { type: "doc/new"; docId: string; name?: string; ts?: number }
+	| { type: "doc/new"; docId: string; name?: string; template?: string; ts?: number }
 	| { type: "doc/load"; doc: CanvasDocument; ts?: number }
 	| { type: "doc/rename"; name: string; ts?: number }
-	| { type: "ui/toggleBorders"; ts?: number };
+	| { type: "ui/toggleBorders"; ts?: number }
+	| { type: "ui/setInspectorTab"; tab: "props" | "theme"; ts?: number };
 
 const now = (): number => Date.now();
 
@@ -460,8 +462,11 @@ export function reducer(state: StudioState, action: Action): StudioState {
 				...state,
 				selection: { ids: action.ids, anchorId: action.anchorId ?? null },
 			};
-		case "theme/update":
-			return { ...state, theme: deepMerge(state.theme, action.patch) };
+		case "theme/update": {
+			const theme = deepMerge(state.theme, action.patch);
+			// 主题与文档保持同步（文档级持久化 + 导出使用文档主题）
+			return { ...state, theme, document: { ...state.document, theme } };
+		}
 		case "device/set":
 			return { ...state, device: { ...state.device, activeId: action.id } };
 		case "canvas/zoom":
@@ -485,7 +490,19 @@ export function reducer(state: StudioState, action: Action): StudioState {
 			return applyWithoutHistory(base, entry.action);
 		}
 		case "doc/new": {
-			const doc = createEmptyDocument(action.docId, action.name);
+			const template = action.template
+				? getTemplate(action.template)
+				: undefined;
+			const base = template
+				? buildTemplateDocument(
+						template.id,
+						action.docId,
+						action.name ?? "Untitled",
+						state.theme,
+					)
+				: createEmptyDocument(action.docId, action.name);
+			// 新文档继承当前主题
+			const doc: CanvasDocument = { ...base, theme: state.theme };
 			return {
 				...state,
 				document: doc,
@@ -497,6 +514,8 @@ export function reducer(state: StudioState, action: Action): StudioState {
 			return {
 				...state,
 				document: action.doc,
+				// 主题以文档为准（旧文档缺 theme 时回退默认）
+				theme: action.doc.theme ?? createDefaultTheme(),
 				selection: { ids: [], anchorId: null },
 				history: { undo: [], redo: [] },
 			};
@@ -509,6 +528,11 @@ export function reducer(state: StudioState, action: Action): StudioState {
 			return {
 				...state,
 				ui: { ...state.ui, showBorders: !state.ui.showBorders },
+			};
+		case "ui/setInspectorTab":
+			return {
+				...state,
+				ui: { ...state.ui, inspectorTab: action.tab },
 			};
 		default:
 			return state;

@@ -103,6 +103,7 @@ export type Action = {
     type: "doc/new";
     docId: string;
     name?: string;
+    template?: string;
     ts?: number;
 } | {
     type: "doc/load";
@@ -114,6 +115,10 @@ export type Action = {
     ts?: number;
 } | {
     type: "ui/toggleBorders";
+    ts?: number;
+} | {
+    type: "ui/setInspectorTab";
+    tab: "props" | "theme";
     ts?: number;
 };
 /** 创建初始状态（含示例文档：Scaffold > Column > [Text, Button]）。 */

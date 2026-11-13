@@ -10,6 +10,7 @@ import { Inspector } from "./inspector/Inspector.js";
 import { ChatPanel } from "./chat/ChatPanel.js";
 import { RpcClient } from "./rpc.js";
 import { UI } from "./theme/ui.js";
+import { TEMPLATES } from "./templates.js";
 
 // 扩充 SlotMap（与宿主 layout 插件声明一致）
 declare module "@deepseek-ai/dsh-client-ui-slots" {
@@ -55,6 +56,7 @@ function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 	);
 	const firstRender = useRef(true);
 	const saveTimer = useRef<number | undefined>(undefined);
+	const [showTemplates, setShowTemplates] = useState(false);
 
 	// 快捷键：Delete/Backspace 删除选中节点；Ctrl+Z / Ctrl+Shift+Z / Ctrl+Y 撤销重做
 	useEffect(() => {
@@ -119,13 +121,16 @@ function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 		};
 	}, [state.document]);
 
-	// 新建文档
-	const handleNew = useCallback(() => {
+	// 从模板新建文档
+	const handleNewFromTemplate = useCallback((templateId: string) => {
+		const template = TEMPLATES.find((t) => t.id === templateId);
 		dispatch({
 			type: "doc/new",
 			docId: generateDocId(),
-			name: "Untitled",
+			name: template?.name ?? "Untitled",
+			template: templateId,
 		});
+		setShowTemplates(false);
 	}, []);
 
 	// 切换文档（输入 id 加载）
@@ -231,22 +236,103 @@ function ComposeStudioPanel({ onBack }: { onBack: () => void }) {
 						</span>
 						{/* 文档操作 + 撤销 / 重做 */}
 						<div style={{ marginLeft: "auto", display: "flex", gap: UI.space.sm }}>
-							<button
-								onClick={handleNew}
-								title="新建文档"
-								style={{
-									border: `1px solid ${UI.border}`,
-									background: UI.surfaceAlt,
-									color: UI.text,
-									borderRadius: UI.radius.md,
-									padding: `${UI.space.xs}px ${UI.space.sm}px`,
-									fontSize: 13,
-									cursor: "pointer",
-									fontFamily: UI.fontSans,
-								}}
-							>
-								新建
-							</button>
+							<div style={{ position: "relative" }}>
+								<button
+									onClick={() => setShowTemplates((v) => !v)}
+									title="新建文档（可选模板）"
+									style={{
+										border: `1px solid ${UI.border}`,
+										background: UI.surfaceAlt,
+										color: UI.text,
+										borderRadius: UI.radius.md,
+										padding: `${UI.space.xs}px ${UI.space.sm}px`,
+										fontSize: 13,
+										cursor: "pointer",
+										fontFamily: UI.fontSans,
+									}}
+								>
+									新建 ▾
+								</button>
+								{showTemplates && (
+									<>
+										{/* 点击空白关闭 */}
+										<div
+											onClick={() => setShowTemplates(false)}
+											style={{
+												position: "fixed",
+												inset: 0,
+												zIndex: 20,
+											}}
+										/>
+										<div
+											style={{
+												position: "absolute",
+												top: "calc(100% + 6px)",
+												left: 0,
+												zIndex: 21,
+												width: 260,
+												maxHeight: 360,
+												overflow: "auto",
+												background: UI.surface,
+												border: `1px solid ${UI.border}`,
+												borderRadius: UI.radius.lg,
+												boxShadow: UI.shadow.lg,
+												padding: UI.space.sm,
+											}}
+										>
+											<div
+												style={{
+													fontSize: 11,
+													fontWeight: 600,
+													color: UI.textFaint,
+													padding: `${UI.space.xs}px ${UI.space.sm}px`,
+													letterSpacing: "0.05em",
+												}}
+											>
+												选择模板
+											</div>
+											{TEMPLATES.map((t) => (
+												<button
+													key={t.id}
+													onClick={() => handleNewFromTemplate(t.id)}
+													style={{
+														display: "block",
+														width: "100%",
+														textAlign: "left",
+														padding: `${UI.space.sm}px ${UI.space.md}px`,
+														marginBottom: 2,
+														border: "none",
+														borderRadius: UI.radius.md,
+														background: "transparent",
+														color: UI.text,
+														cursor: "pointer",
+														fontFamily: UI.fontSans,
+													}}
+													onMouseEnter={(e) => {
+														e.currentTarget.style.background = UI.surfaceAlt;
+													}}
+													onMouseLeave={(e) => {
+														e.currentTarget.style.background = "transparent";
+													}}
+												>
+													<div style={{ fontSize: 13, fontWeight: 600 }}>
+														{t.name}
+													</div>
+													<div
+														style={{
+															fontSize: 11,
+															color: UI.textMuted,
+															marginTop: 2,
+														}}
+													>
+														{t.description}
+													</div>
+												</button>
+											))}
+										</div>
+									</>
+								)}
+							</div>
 							<button
 								onClick={handleLoad}
 								title="打开文档"
